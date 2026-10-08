@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lumina FX Studio | 4K/8K AI Upscaler, Gradient Map, Film Grain & Blur</title>
+  <meta name="description" content="Next-generation browser studio for 4K and 8K Image Upscaling, Gradient Duotone mapping, Film Grain Noise synthesis, and Cinematic Blur effects.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app" class="app-layout">
+    <!-- Top Global Header -->
+    <header class="top-navbar">
+      <div class="nav-brand">
+        <div class="brand-logo">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+            <polyline points="2 17 12 22 22 17"></polyline>
+            <polyline points="2 12 12 17 22 12"></polyline>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>LUMINA <span>PRO STUDIO</span></h1>
+          <span class="brand-badge">AI 4K / 8K ENGINE</span>
+        </div>
+      </div>
+
+      <!-- Quick Samples & Upload -->
+      <div class="nav-center">
+        <div class="sample-chips">
+          <span class="sample-label">Try Samples:</span>
+          <button type="button" class="sample-btn active" data-sample="cyberpunk" id="sampleCyberpunkBtn">
+            <span class="sample-icon">🌆</span> Cyberpunk
+          </button>
+          <button type="button" class="sample-btn" data-sample="portrait" id="samplePortraitBtn">
+            <span class="sample-icon">👤</span> Portrait
+          </button>
+          <button type="button" class="sample-btn" data-sample="nature" id="sampleNatureBtn">
+            <span class="sample-icon">🏔️</span> Nature
+          </button>
+        </div>
+
+        <div class="upload-wrapper">
+          <input type="file" id="imageFileInput" accept="image/*" class="sr-only">
+          <label for="imageFileInput" class="btn btn-upload" id="uploadLabel">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            <span>Upload Image</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Top Actions (View mode & Export) -->
+      <div class="nav-actions">
+        <div class="view-mode-group" role="group" aria-label="View Modes">
+          <button type="button" class="mode-btn active" data-view="split" title="Split Screen Slider (Before/After)" id="viewSplitBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+              <line x1="12" y1="3" x2="12" y2="21"></line>
+            </svg>
+            <span>Split View</span>
+          </button>
+          <button type="button" class="mode-btn" data-view="side" title="Side by Side View" id="viewSideBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="4" width="9" height="16" rx="1"></rect>
+              <rect x="13" y="4" width="9" height="16" rx="1"></rect>
+            </svg>
+            <span>Side by Side</span>
+          </button>
+          <button type="button" class="mode-btn" data-view="processed" title="Show Processed Output Only" id="viewProcessedBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+            <span>Result</span>
+          </button>
+        </div>
+
+        <button type="button" class="btn btn-reset" id="resetAllBtn" title="Reset all adjustments">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+            <path d="M3 3v5h5"></path>
+          </svg>
+          <span>Reset</span>
+        </button>
+
+        <button type="button" class="btn btn-primary" id="openExportModalBtn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span>Export 4K/8K</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="workspace-container">
+      <!-- Left Controls Panel (Features & Parameters) -->
+      <aside class="sidebar-panel">
+        <!-- Feature Navigation Tabs -->
+        <nav class="feature-tabs" aria-label="Feature Tabs">
+          <button type="button" class="tab-item active" data-tab="upscale" id="tabUpscale">
+            <span class="tab-icon">🚀</span>
+            <div class="tab-meta">
+              <span class="tab-title">Upscale 4K/8K</span>
+              <span class="tab-tag" id="upscaleTag">4X Active</span>
+            </div>
+            <div class="tab-toggle-wrap" title="Toggle Feature">
+              <input type="checkbox" id="toggleUpscale" checked class="feature-toggle-checkbox">
+              <label for="toggleUpscale" class="feature-toggle-switch"></label>
+            </div>
+          </button>
+
+          <button type="button" class="tab-item" data-tab="gradient" id="tabGradient">
+            <span class="tab-icon">🌈</span>
+            <div class="tab-meta">
+              <span class="tab-title">Gradient Map</span>
+              <span class="tab-tag" id="gradientTag">Off</span>
+            </div>
+            <div class="tab-toggle-wrap" title="Toggle Feature">
+              <input type="checkbox" id="toggleGradient" class="feature-toggle-checkbox">
+              <label for="toggleGradient" class="feature-toggle-switch"></label>
+            </div>
+          </button>
+
+          <button type="button" class="tab-item" data-tab="noise" id="tabNoise">
+            <span class="tab-icon">🎞️</span>
+            <div class="tab-meta">
+              <span class="tab-title">Film Grain & Noise</span>
+              <span class="tab-tag" id="noiseTag">Off</span>
+            </div>
+            <div class="tab-toggle-wrap" title="Toggle Feature">
+              <input type="checkbox" id="toggleNoise" class="feature-toggle-checkbox">
+              <label for="toggleNoise" class="feature-toggle-switch"></label>
+            </div>
+          </button>
+
+          <button type="button" class="tab-item" data-tab="blur" id="tabBlur">
+            <span class="tab-icon">💧</span>
+            <div class="tab-meta">
+              <span class="tab-title">Blur Studio</span>
+              <span class="tab-tag" id="blurTag">Off</span>
+            </div>
+            <div class="tab-toggle-wrap" title="Toggle Feature">
+              <input type="checkbox" id="toggleBlur" class="feature-toggle-checkbox">
+              <label for="toggleBlur" class="feature-toggle-switch"></label>
+            </div>
+          </button>
+
+          <button type="button" class="tab-item" data-tab="presets" id="tabPresets">
+            <span class="tab-icon">✨</span>
+            <div class="tab-meta">
+              <span class="tab-title">Studio Presets</span>
+              <span class="tab-tag">One-Click</span>
+            </div>
+          </button>
+        </nav>
+
+        <!-- Feature Settings Content Panes -->
+        <div class="tab-content-container">
+          
+          <!-- PANE 1: AI UPSCALE 4K / 8K -->
+          <div class="tab-pane active" id="paneUpscale">
+            <div class="pane-header">
+              <div class="pane-badge"><span class="pulse-dot"></span> ULTRA RESOLUTION ENGINE</div>
+              <h3>AI Super Resolution</h3>
+              <p>Upscale to crisp 4K Ultra HD (3840×2160) or 8K (7680×4320) with AI detail reconstruction & micro-contrast sharpening.</p>
+            </div>
+
+            <!-- Resolution Target Pills -->
+            <div class="control-group">
+              <label class="group-label">Target Resolution & Scale</label>
+              <div class="scale-selector-grid">
+                <button type="button" class="scale-btn" data-scale="2">
+                  <span class="scale-ratio">2X</span>
+                  <span class="scale-desc">2K Quad HD</span>
+                </button>
+                <button type="button" class="scale-btn active" data-scale="4">
+                  <span class="scale-ratio">4X</span>
+                  <span class="scale-desc">Ultra HD</span>
+                </button>
+                <button type="button" class="scale-btn premium" data-scale="4k">
+                  <span class="badge-flag">UHD</span>
+                  <span class="scale-ratio">4K</span>
+                  <span class="scale-desc">3840 × 2160</span>
+                </button>
+                <button type="button" class="scale-btn premium gold" data-scale="8k">
+                  <span class="badge-flag">MAX</span>
+                  <span class="scale-ratio">8K</span>
+                  <span class="scale-desc">7680 × 4320</span>
+                </button>
+                <button type="button" class="scale-btn" data-scale="custom" id="scaleCustomBtn">
+                  <span class="scale-ratio">Custom</span>
+                  <span class="scale-desc">Exact W × H</span>
+                </button>
+              </div>
+
+              <!-- Contextual Custom Dimensions Box -->
+              <div class="custom-dim-box" id="customDimBox" style="display: none;">
+                <div class="slider-header">
+                  <label for="customMultiplier">Custom Multiplier</label>
+                  <span class="slider-val" id="customMultiplierVal">3.0x</span>
+                </div>
+                <input type="range" id="customMultiplier" min="1" max="10" step="0.1" value="3.0" class="styled-range">
+
+                <div class="dim-inputs-row">
+                  <div class="dim-input-col">
+                    <span>Width (px)</span>
+                    <input type="number" id="customWidthInput" class="styled-num-input" value="3840" min="64" max="16384">
+                  </div>
+                  <button type="button" class="aspect-lock-btn locked" id="aspectLockBtn" title="Lock / Unlock Aspect Ratio">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                  </button>
+                  <div class="dim-input-col">
+                    <span>Height (px)</span>
+                    <input type="number" id="customHeightInput" class="styled-num-input" value="2160" min="64" max="16384">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Resampling Kernel & AI Engine -->
+            <div class="control-group">
+              <label class="group-label" for="upscaleEngineSelect">Resampling Kernel & Engine</label>
+              <div class="select-styled">
+                <select id="upscaleEngineSelect">
+                  <option value="neural">Neural Super-Res (Lanczos3 Edge Synthesis)</option>
+                  <option value="cinematic">Cinematic Photo Clarity (High-Pass Unsharp)</option>
+                  <option value="anime">Illustration & Vector Clean (Sharp Bicubic)</option>
+                  <option value="mitchell">Mitchell-Netravali (Anti-ringing Filter)</option>
+                  <option value="bilinear">Smooth Bilinear Interpolation</option>
+                  <option value="nearest">Nearest Neighbor (Pixel Art Sharp)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Detail Sharpening -->
+            <div class="control-group">
+              <div class="slider-header">
+                <label for="upscaleSharpness">Detail Sharpening & Edge Boost</label>
+                <span class="slider-val" id="upscaleSharpnessVal">65%</span>
+              </div>
+              <input type="range" id="upscaleSharpness" min="0" max="100" value="65" class="styled-range">
+            </div>
+
+            <!-- Sharpen Sigma & Threshold -->
+            <div class="control-group">
+              <div class="slider-header">
+                <label for="upscaleSharpenSigma">Unsharp Radius (Sigma)</label>
+                <span class="slider-val" id="upscaleSharpenSigmaVal">1.2</span>
+              </div>
+              <input type="range" id="upscaleSharpenSigma" min="0.2" max="5.0" step="0.1" value="1.2" class="styled-range">
+            </div>
+
+            <!-- Micro-Contrast / Clarity -->
+            <div class="control-group">
+              <div class="slider-header">
+                <label for="upscaleClarity">Micro-Contrast & Texture Recovery</label>
+                <span class="slider-val" id="upscaleClarityVal">45%</span>
+              </div>
+              <input type="range" id="upscaleClarity" min="0" max="100" value="45" class="styled-range">
+            </div>
+
+            <!-- Vibrance & Color Pop -->
+            <div class="control-group">
+              <div class="slider-header">
+                <label for="upscaleVibrance">Color Vibrance & Saturation</label>
+                <span class="slider-val" id="upscaleVibranceVal">25%</span>
+              </div>
+              <input type="range" id="upscaleVibrance" min="-100" max="100" value="25" class="styled-range">
+            </div>
+
+            <!-- Denoise Pre-Filter -->
+            <div class="control-group">
+              <div class="slider-header">
+                <label for="upscaleDenoise">Denoise Pre-Filter (Remove Artifacts)</label>
+                <span class="slider-val" id="upscaleDenoiseVal">20%</span>
+              </div>
+              <input type="range" id="upscaleDenoise" min="0" max="100" value="20" class="styled-range">
+            </div>
+
+            <!-- Face Enhancement -->
+            <div class="toggle-row">
+              <label for="toggleFaceEnhance">AI Face Enhancement & Restoration</label>
+              <input type="checkbox" id="toggleFaceEnhance" checked class="ios-checkbox">
+            </div>
+
+            <div class="control-group" id="faceIntensityGroup">
+              <div class="slider-header">
+                <label for="faceIntensity">Face Enhancement Intensity</label>
+                <span class="slider-val" id="faceIntensityVal">60%</span>
+              </div>
+              <input type="range" id="faceIntensity" min="0" max="100" value="60" class="styled-range">
+            </div>
+
+            <!-- Print Density PPI (72 to 300 PPI requirement) -->
+            <div class="control-group">
+              <div class="slider-header">
+                <label for="upscalePpi">Print Density (PPI / DPI)</label>
+                <span class="slider-val" id="upscalePpiVal">300 PPI</span>
+              </div>
+              <div class="ppi-chips-row">
+                <button type="button" class="ppi-chip" data-ppi="72">72 (Web)</button>
+                <button type="button" class="ppi-chip" data-ppi="96">96 (Screen)</button>
+                <button type="button" class="ppi-chip" data-ppi="150">150 (News)</button>
+                <button type="button" class="ppi-chip active" data-ppi="300">300 (Print)</button>
+                <button type="button" class="ppi-chip" data-ppi="600">600 (Ultra Art)</button>
+              </div>
+              <input type="range" id="upscalePpi" min="72" max="600" value="300" class="styled-range" style="margin-top: 8px;">
+            </div>
+
+            <div class="info-card">
+              <div class="info-icon">💡</div>
+              <div class="info-body">
+                <strong>100% Fully Customizable</strong>
+                <p>Every kernel, unsharp sigma, custom dimension, and print density metadata is preserved without compromise.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- PANE 2: IMAGE TO GRADIENT / GRADIENT MAP -->
+          <div class="tab-pane" id="paneGradient">
+            <div class="pane-header">
+              <div class="pane-badge">LUMINANCE MAPPING</div>
+              <h3>Image to Gradient FX</h3>
+              <p>Map pixel brightness into artistic multi-color gradients, neon duotones, and cinematic color palettes.</p>
+            </div>
+
+            <!-- Gradient Presets Palette Grid -->
+            <div class="control-group">
+              <label class="group-label">Curated Gradient Maps</label>
+              <div class="gradient-preset-grid" id="gradientPresetGrid">
+                <!-- Dynamically populated or static presets -->
+                <button type="button" class="grad-card active" data-preset="cyberpunk" title="Cyberpunk Neon">
+                  <div class="grad-preview" style="background: linear-gradient(90deg, #090979 0%, #d6249f 50%, #28e5ff 100%);"></div>
+                  <span>Cyberpunk</span>
+                </button>
+                <button type="button" class="grad-card" data-preset="sunset" title="Golden Sunset">
+                  <div class="grad-preview" style="background: linear-gradient(90deg, #1b092b 0%, #db2777 45%, #f59e0b 80%, #fef08a 100%);"></div>
+                  <span>Sunset Gold</span>
+                </button>
+                <button type="button" class="grad-card" data-preset="matrix" title="Emerald Matrix">
+                  <div class="grad-preview" style="background: linear-gradient(90deg, #021a0e 0%, #059669 60%, #6ee7b7 100%);"></div>
+                  <span>Matrix Neon</span>
+                </button>
+                <button type="button" class="grad-card" data-preset="vaporwave" title="Vaporwave Dream">
+                  <div class="grad-preview" style="background: linear-gradient(90deg, #2e0854 0%, #ec4899 50%, #38bdf8 100%);"></div>
+                  <span>Vaporwave</span>
+                </button>
+                <button type="button" class="grad-card" data-preset="sepia" title="Vintage Copper Sepia">
+                  <div class="grad-preview" style="background: linear-gradient(90deg, #1c1006 0%, #78350f 50%, #fef3c7 100%);"></div>
+                  <span>Sepia Bronze</span>
+                </button>
+                <button type="button" class="grad-card" data-preset="midnight" title="Midnight Velvet">
+                  <div class="grad-preview" style="background: linear-gradient(90deg, #05051a 0%, #4338ca 60%, #c4b5fd 100%);"></div>
+                  <span>Midnight</span>
+                </button>
+                <button type="button" class="grad-card" data-preset="acid" title="Acid Lime & Violet">
+                  <div class="grad-preview" style="background: linear-gradient(90deg, #2e1065 0%, #a855f7 40%, #84cc16 100%);"></div>
+                  <span>Acid Lime</span>
+                </button>
+                <button type="button" class="grad-card" data-preset="infrared" title="Aerochrome Infrared">
+                  <div class="grad-preview" style="background: linear-gradient(90deg, #0f172a 0%, #e11d48 55%, #fecdd3 100%);"></div>
+                  <span>Infrared</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Gradient Type -->
+            <div class="control-group">
+              <label class="group-label" for="gradTypeSelect">Gradient Geometry Type</label>
+              <div class="select-styled">
+                <select id="gradTypeSelect">
+                  <option value="linear" selected>Linear Gradient (Directional Angle)</option>
+                  <option value="radial">Radial Gradient (Circular Focal Point)</option>
+                  <option value="angular">Angular / Conic Sweep</option>
+                  <option value="soft-blur">Soft Blur / Mesh Atmosphere</option>
+                  <option value="liquid">Liquid Flow Distortion</option>
+                  <option value="abstract">Abstract Duotone Contour</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Custom Gradient Builder & Dynamic Multi-Stop Manager -->
+            <div class="control-group">
+              <div class="slider-header">
+                <label class="group-label">Color Stops (Offset & Opacity)</label>
+                <button type="button" class="btn-text-sm" id="btnExtractImageColors" title="Extract dominant colors from this image into gradient">
+                  🎨 Extract Palette
+                </button>
+              </div>
+
+              <!-- Dynamic Stop Rows List -->
+              <div class="gradient-stops-list" id="stopsListContainer">
+                <!-- Dynamically populated via JS, initially 3 stops -->
+                <div class="stop-row-card" data-stop-idx="0">
+                  <input type="color" class="stop-color-picker" value="#090979" title="Stop 1 Color">
+                  <div class="stop-slider-wrap">
+                    <div class="stop-slider-labels">
+                      <span>Offset: <strong class="stop-offset-val">0%</strong></span>
+                      <span>Alpha: <strong class="stop-alpha-val">100%</strong></span>
+                    </div>
+                    <input type="range" class="styled-range stop-offset-slider" min="0" max="100" value="0">
+                  </div>
+                  <button type="button" class="btn-remove-stop" title="Remove stop" disabled>×</button>
+                </div>
+
+                <div class="stop-row-card" data-stop-idx="1">
+                  <input type="color" class="stop-color-picker" value="#d6249f" title="Stop 2 Color">
+                  <div class="stop-slider-wrap">
+                    <div class="stop-slider-labels">
+                      <span>Offset: <strong class="stop-offset-val">50%</strong></span>
+                      <span>Alpha: <strong class="stop-alpha-val">100%</strong></span>
+                    </div>
+                    <input type="range" class="styled-range stop-offset-slider" min="0" max="100" value="50">
+                  </div>
+                  <button type="button" class="btn-remove-stop" title="Remove stop">×</button>
+                </div>
+
+                <div class="stop-row-card" data-stop-idx="2">
+                  <input type="color" class="stop-color-picker" value="#28e5ff" title="Stop 3 Color">
+                  <div class="stop-slider-wrap">
+                    <div class="stop-slider-labels">
+                      <span>Offset: <strong class="stop-offset-val">100%</strong></span>
+                      <span>Alpha: <strong class="stop-alpha-val">100%</strong></span>
+                    </div>
+                    <input type="range" class="styled-range stop-offset-slider" min="0" max="100" value="100">
+                  </div>
+                  <button type="button" class="btn-remove-stop" title="Remove stop">×</button>
+                </div>
+              </div>
+
+              <button type="button" class="btn-add-stop-row" id="btnAddGradientStop">
+                <span>+ Add Color Stop (Up to 8)</span>
+              </button>
+            </div>
+
+            <!-- Angle & Geometry Controls -->
+            <div class="control-group" id="gradAngleGroup">
+              <div class="slider-header">
+                <label for="gradAngle">Gradient Angle</label>
+                <span class="slider-val" id="gradAngleVal">135°</span>
+              </div>
+              <input type="range" id="gradAngle" min="0" max="360" value="135" class="styled-range">
+            </div>
+
+            <div class="control-group" id="gradRadialGroup" style="display: none;">
+              <div class="slider-header">
+                <label for="gradFocalX">Focal Center X / Y</label>
+                <span class="slider-val" id="gradFocalVal">50% / 50%</span>
+              </div>
+              <div class="dim-inputs-row">
+                <input type="range" id="gradFocalX" min="0" max="100" value="50" class="styled-range" title="Focal X">
+                <input type="range" id="gradFocalY" min="0" max="100" value="50" class="styled-range" title="Focal Y">
+              </div>
+
+              <div class="slider-header" style="margin-top: 8px;">
+                <label for="gradRadialRadius">Radial Spread / Radius</label>
+                <span class="slider-val" id="gradRadialRadiusVal">70%</span>
+              </div>
+              <input type="range" id="gradRadialRadius" min="10" max="200" value="70" class="styled-range">
+            </div>
+
+            <!-- Blending & Controls -->
+            <div class="control-group">
+              <div class="slider-header">
+                <label for="gradBlendModeSelect">Blend Mode</label>
+              </div>
+              <div class="select-styled">
+                <select id="gradBlendModeSelect">
+                  <option value="normal">Normal (Pure Gradient Map)</option>
+                  <option value="overlay" selected>Overlay (Vibrant Cinematic)</option>
+                  <option value="soft-light">Soft Light (Subtle Tint)</option>
+                  <option value="screen">Screen (Luminous Radiance)</option>
+                  <option value="multiply">Multiply (Deep Moody)</option>
+                  <option value="color">Color Tint (Luminosity Keep)</option>
+                  <option value="color-dodge">Color Dodge (Extreme Pop)</option>
+                  <option value="luminosity">Luminosity Transfer</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="control-group">
+              <div class="slider-header">
+                <label for="gradOpacity">Gradient Intensity / Opacity</label>
+                <span class="slider-val" id="gradOpacityVal">85%</span>
+              </div>
+              <input type="range" id="gradOpacity" min="0" max="100" value="85" class="styled-range">
+            </div>
+
+            <div class="control-group">
+              <div class="slider-header">
+                <label for="gradContrast">Luminance Spread & Contrast</label>
+                <span class="slider-val" id="gradContrastVal">50%</span>
+              </div>
+              <input type="range" id="gradContrast" min="0" max="100" value="50" class="styled-range">
+            </div>
+
+            <div class="control-group">
+              <div class="slider-header">
+                <label for="gradDither">Anti-Banding Dither Noise</label>
+                <span class="slider-val" id="gradDitherVal">15%</span>
+              </div>
+              <input type="range" id="gradDither" min="0" max="100" value="15" class="styled-range">
+            </div>
+
+            <div class="toggle-row">
+              <label for="gradInvert">Invert Gradient Mapping</label>
+              <input type="checkbox" id="gradInvert" class="ios-checkbox">
+            </div>
+
+            <div class="control-group" style="margin-top: 10px;">
+              <button type="button" class="btn btn-secondary w-full" id="btnGenVariations" style="width: 100%; justify-content: center;">
+                <span>✨ Generate 10 Gradient Variations</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- PANE 3: NOISE ADD (FILM GRAIN & TEXTURE) -->
+          <div class="tab-pane" id="paneNoise">
+            <div class="pane-header">
+              <div class="pane-badge">ANALOG TEXTURE</div>
+              <h3>Noise & Film Grain</h3>
+              <p>Add authentic Kodak 35mm film grain, vintage grit, or digital sensor noise with realistic midtone falloff.</p>
+            </div>
+
+            <div class="control-group">
+              <label class="group-label">Film Stock & Grain Profile</label>
+              <div class="grain-type-grid">
+                <button type="button" class="grain-chip active" data-type="film35">
+                  <span class="chip-title">Kodak Tri-X</span>
+                  <span class="chip-sub">35mm Classic</span>
+                </button>
+                <button type="button" class="grain-chip" data-type="ilford">
+                  <span class="chip-title">Ilford HP5</span>
+                  <span class="chip-sub">B&W Halide</span>
+                </button>
+                <button type="button" class="grain-chip" data-type="fuji">
+                  <span class="chip-title">Fuji Superia</span>
+                  <span class="chip-sub">Color Grain</span>
+                </button>
+                <button type="button" class="grain-chip" data-type="polaroid">
+                  <span class="chip-title">Polaroid 600</span>
+                  <span class="chip-sub">Vintage Instant</span>
+                </button>
+                <button type="button" class="grain-chip" data-type="digital">
+                  <span class="chip-title">Digital ISO</span>
+                  <span class="chip-sub">Sensor Noise</span>
+                </button>
+                <button type="button" class="grain-chip" data-type="chromatic">
+                  <span class="chip-title">Chromatic</span>
+                  <span class="chip-sub">RGB Color Noise</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Amount / Intensity -->
+            <div class="control-group">
+              <div class="slider-header">
+                <label for="noiseAmount">Noise Amount / Intensity</label>
+                <span class="slider-val" id="noiseAmountVal">35%</span>
+              </div>
+              <input type="range" id="noiseAmount" min="0" max="100" value="35" class="styled-range">
+            </div>
+
+            <!-- Particle Size -->
+            <div class="control-group">
+              <div class="slider-header">
+                <label for="noiseSize">Grain Particle Size</label>
+                <span class="slider-val" id="noiseSizeVal">1.5 px</span>
+              </div>
+              <input type="range" id="noiseSize" min="0.5" max="8.0" step="0.1" value="1.5" class="styled-range">
+            </div>
+
+            <!-- Granular Tonal Weight Sliders (Analog Physics) -->
+            <div class="control-group">
+              <label class="group-label">Granular Tonal Distribution</label>
+              
+              <div class="slider-header" style="margin-top: 4px;">
+                <label for="noiseShadows">Shadows Grain</label>
+                <span class="slider-val" id="noiseShadowsVal">50%</span>
+              </div>
+              <input type="range" id="noiseShadows" min="0" max="100" value="50" class="styled-range">
+
+              <div class="slider-header" style="margin-top: 8px;">
+                <label for="noiseMidtones">Midtones Peak Grain (Parabolic Falloff)</label>
+                <span class="slider-val" id="noiseMidtonesVal">75%</span>
+              </div>
+              <input type="range" id="noiseMidtones" min="0" max="100" value="75" class="styled-range">
+
+              <div class="slider-header" style="margin-top: 8px;">
+                <label for="noiseHighlights">Highlights Grain</label>
+                <span class="slider-val" id="noiseHighlightsVal">25%</span>
+              </div>
+              <input type="range" id="noiseHighlights" min="0" max="100" value="25" class="styled-range">
+            </div>
+
+            <!-- Dust & Scratches Specks -->
+            <div class="control-group">
+              <div class="slider-header">
+                <label for="noiseDust">Dust Specks & Film Scratches</label>
+                <span class="slider-val" id="noiseDustVal">10%</span>
+              </div>
+              <input type="range" id="noiseDust" min="0" max="100" value="10" class="styled-range">
+            </div>
+
+            <!-- Contrast & Roughness -->
+            <div class="control-group">
+              <div class="slider-header">
+                <label for="noiseContrast">Grain Contrast & Roughness</label>
+                <span class="slider-val" id="noiseContrastVal">50%</span>
+              </div>
+              <input type="range" id="noiseContrast" min="0" max="100" value="50" class="styled-range">
+            </div>
+
+            <!-- Color Variation -->
+            <div class="control-group">
+              <div class="slider-header">
+                <label for="noiseColorVar">Color Noise Variation</label>
+                <span class="slider-val" id="noiseColorVarVal">30%</span>
+              </div>
+              <input type="range" id="noiseColorVar" min="0" max="100" value="30" class="styled-range">
+            </div>
+
+            <!-- Seed & Randomization -->
+            <div class="control-group">
+              <div class="slider-header">
+                <label for="noiseSeedInput">Random Seed (Seed Reproducibility)</label>
+              </div>
+              <div class="dim-inputs-row">
+                <input type="number" id="noiseSeedInput" class="styled-num-input" value="12345" min="1" max="9999999">
+                <button type="button" class="btn btn-secondary btn-sm" id="btnRandomizeNoiseSeed" style="white-space: nowrap;">
+                  <span>🎲 Randomize</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Blending Mode -->
+            <div class="control-group">
+              <div class="slider-header">
+                <label for="noiseBlend">Noise Blending Mode</label>
+              </div>
+              <div class="select-styled">
+                <select id="noiseBlend">
+                  <option value="overlay" selected>Overlay (Authentic Film Stock)</option>
+                  <option value="soft-light">Soft Light (Subtle Texture)</option>
+                  <option value="screen">Screen (Dust & Luminance)</option>
+                  <option value="multiply">Multiply (Dark Gritty)</option>
+                  <option value="hard-light">Hard Light (Raw Grit)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="toggle-row">
+              <label for="noiseMonochrome">Monochrome / Silver Halide</label>
+              <input type="checkbox" id="noiseMonochrome" checked class="ios-checkbox">
+            </div>
+
+            <div class="toggle-row">
+              <label for="noisePreserveColors">Preserve Original Color Balance</label>
+              <input type="checkbox" id="noisePreserveColors" checked class="ios-checkbox">
+            </div>
+
+            <div class="toggle-row">
+              <label for="noiseAnimated">Real-Time Film Jitter (Preview)</label>
+              <input type="checkbox" id="noiseAnimated" class="ios-checkbox">
+            </div>
+          </div>
+
+          <!-- PANE 4: IMAGE TO BLUR (CINEMATIC BLUR STUDIO) -->
+          <div class="tab-pane" id="paneBlur">
+            <div class="pane-header">
+              <div class="pane-badge">OPTICAL LENS FX</div>
+              <h3>Cinematic Blur Studio</h3>
+              <p>Apply Gaussian softness, directional motion blur, tilt-shift miniature depth-of-field, or specular bokeh.</p>
+            </div>
+
+            <div class="control-group">
+              <label class="group-label">Blur Mode</label>
+              <div class="blur-type-grid">
+                <button type="button" class="blur-chip active" data-blur="gaussian">
+                  <span class="chip-title">Gaussian</span>
+                  <span class="chip-sub">Smooth Silk</span>
+                </button>
+                <button type="button" class="blur-chip" data-blur="motion">
+                  <span class="chip-title">Motion Blur</span>
+                  <span class="chip-sub">Speed Angle</span>
+                </button>
+                <button type="button" class="blur-chip" data-blur="tiltshift">
+                  <span class="chip-title">Tilt-Shift</span>
+                  <span class="chip-sub">Miniature Depth</span>
+                </button>
+                <button type="button" class="blur-chip" data-blur="radial">
+                  <span class="chip-title">Radial Spin</span>
+                  <span class="chip-sub">Vortex Spin</span>
+                </button>
+                <button type="button" class="blur-chip" data-blur="zoom">
+                  <span class="chip-title">Zoom Burst</span>
+                  <span class="chip-sub">Radial Zoom</span>
+                </button>
+                <button type="button" class="blur-chip" data-blur="bokeh">
+                  <span class="chip-title">Bokeh Bloom</span>
+                  <span class="chip-sub">Specular Lens</span>
+                </button>
+                <button type="button" class="blur-chip" data-blur="background">
+                  <span class="chip-title">Background</span>
+                  <span class="chip-sub">Subject Mask</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Master Radius -->
+            <div class="control-group">
+              <div class="slider-header">
+                <label for="blurRadius">Blur Radius / Strength</label>
+                <span class="slider-val" id="blurRadiusVal">15 px</span>
+              </div>
+              <input type="range" id="blurRadius" min="0" max="120" value="15" class="styled-range">
+            </div>
+
+            <!-- Contextual blur controls: Motion Blur -->
+            <div class="control-group" id="motionAngleGroup" style="display: none;">
+              <div class="slider-header">
+                <label for="motionAngle">Motion Angle</label>
+                <span class="slider-val" id="motionAngleVal">45°</span>
+              </div>
+              <input type="range" id="motionAngle" min="0" max="360" value="45" class="styled-range">
+
+              <div class="slider-header" style="margin-top: 8px;">
+                <label for="motionDistance">Motion Distance (Streak)</label>
+                <span class="slider-val" id="motionDistanceVal">25 px</span>
+              </div>
+              <input type="range" id="motionDistance" min="1" max="100" value="25" class="styled-range">
+            </div>
+
+            <!-- Contextual blur controls: Radial Spin & Zoom -->
+            <div class="control-group" id="radialSpinGroup" style="display: none;">
+              <div class="slider-header">
+                <label for="spinCenterX">Spin / Zoom Center (X / Y)</label>
+                <span class="slider-val" id="spinCenterVal">50% / 50%</span>
+              </div>
+              <div class="dim-inputs-row">
+                <input type="range" id="spinCenterX" min="0" max="100" value="50" class="styled-range" title="Center X">
+                <input type="range" id="spinCenterY" min="0" max="100" value="50" class="styled-range" title="Center Y">
+              </div>
+
+              <div class="slider-header" style="margin-top: 8px;">
+                <label for="radialWhirl">Radial Whirl / Angle</label>
+                <span class="slider-val" id="radialWhirlVal">25°</span>
+              </div>
+              <input type="range" id="radialWhirl" min="-180" max="180" value="25" class="styled-range">
+            </div>
+
+            <!-- Contextual blur controls: Tilt-Shift -->
+            <div class="control-group" id="tiltShiftGroup" style="display: none;">
+              <div class="slider-header">
+                <label for="tiltFocusPos">Focus Position</label>
+                <span class="slider-val" id="tiltFocusPosVal">50%</span>
+              </div>
+              <input type="range" id="tiltFocusPos" min="0" max="100" value="50" class="styled-range">
+
+              <div class="slider-header" style="margin-top: 8px;">
+                <label for="tiltFocusWidth">Focus Clear Corridor</label>
+                <span class="slider-val" id="tiltFocusWidthVal">30%</span>
+              </div>
+              <input type="range" id="tiltFocusWidth" min="5" max="80" value="30" class="styled-range">
+
+              <div class="slider-header" style="margin-top: 8px;">
+                <label for="tiltAngle">Tilt-Shift Angle</label>
+                <span class="slider-val" id="tiltAngleVal">0°</span>
+              </div>
+              <input type="range" id="tiltAngle" min="0" max="180" value="0" class="styled-range">
+
+              <div class="slider-header" style="margin-top: 8px;">
+                <label for="tiltFeather">Feather Transition Softness</label>
+                <span class="slider-val" id="tiltFeatherVal">50%</span>
+              </div>
+              <input type="range" id="tiltFeather" min="0" max="100" value="50" class="styled-range">
+            </div>
+
+            <!-- Contextual blur controls: Bokeh Highlights -->
+            <div class="control-group" id="bokehGroup" style="display: none;">
+              <div class="slider-header">
+                <label for="bokehThreshold">Highlight Sparkle Threshold</label>
+                <span class="slider-val" id="bokehThresholdVal">75%</span>
+              </div>
+              <input type="range" id="bokehThreshold" min="10" max="98" value="75" class="styled-range">
+
+              <div class="slider-header" style="margin-top: 8px;">
+                <label for="bokehBoost">Bokeh Glow Multiplier</label>
+                <span class="slider-val" id="bokehBoostVal">2.0x</span>
+              </div>
+              <input type="range" id="bokehBoost" min="1.0" max="5.0" step="0.1" value="2.0" class="styled-range">
+
+              <div class="slider-header" style="margin-top: 8px;">
+                <label for="bokehApertureSelect">Aperture Blade Shape</label>
+              </div>
+              <div class="select-styled">
+                <select id="bokehApertureSelect">
+                  <option value="circle" selected>Circular Aperture (Smooth)</option>
+                  <option value="5-blade">5-Blade Pentagon</option>
+                  <option value="6-blade">6-Blade Hexagonal</option>
+                  <option value="8-blade">8-Blade Octagonal Pro Lens</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Contextual blur controls: Subject Mask for Background Blur -->
+            <div class="control-group" id="maskGroup" style="display: none;">
+              <label class="group-label">Interactive Subject Mask</label>
+              <div class="mask-tool-toolbar">
+                <button type="button" class="mask-btn active" id="btnMaskBrush">
+                  <span>🖌️ Brush</span>
+                </button>
+                <button type="button" class="mask-btn" id="btnMaskEraser">
+                  <span>🧹 Eraser</span>
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" id="btnMaskClear">
+                  <span>Clear</span>
+                </button>
+              </div>
+
+              <div class="slider-header" style="margin-top: 8px;">
+                <label for="maskBrushSize">Brush Size</label>
+                <span class="slider-val" id="maskBrushSizeVal">35 px</span>
+              </div>
+              <input type="range" id="maskBrushSize" min="5" max="100" value="35" class="styled-range">
+            </div>
+
+            <div class="toggle-row">
+              <label for="blurMaskEdges">Preserve Image Borders</label>
+              <input type="checkbox" id="blurMaskEdges" checked class="ios-checkbox">
+            </div>
+          </div>
+
+          <!-- PANE 5: PRESETS -->
+          <div class="tab-pane" id="panePresets">
+            <div class="pane-header">
+              <div class="pane-badge">INSTANT STYLES</div>
+              <h3>Curated Studio Presets</h3>
+              <p>Apply finely tuned multi-feature recipes combining Upscaling, Gradients, Film Grain, and Blur in 1-click.</p>
+            </div>
+
+            <div class="preset-cards-list">
+              <button type="button" class="preset-card" data-preset-action="crisp-4k">
+                <div class="preset-card-icon">🚀</div>
+                <div class="preset-card-body">
+                  <h4>4K Ultra Crisp Master</h4>
+                  <p>4X Super Resolution + AI Sharpening + Micro-Contrast Boost.</p>
+                </div>
+              </button>
+
+              <button type="button" class="preset-card" data-preset-action="8k-extreme">
+                <div class="preset-card-icon">👑</div>
+                <div class="preset-card-body">
+                  <h4>8K Studio Masterpiece</h4>
+                  <p>Maximum 8K UHD canvas allocation with high-definition texture synthesis.</p>
+                </div>
+              </button>
+
+              <button type="button" class="preset-card" data-preset-action="vintage-film">
+                <div class="preset-card-icon">🎞️</div>
+                <div class="preset-card-body">
+                  <h4>35mm Cinematic Film</h4>
+                  <p>Warm Sepia Bronze gradient + Kodak 35mm grain + subtle optical softness.</p>
+                </div>
+              </button>
+
+              <button type="button" class="preset-card" data-preset-action="cyberpunk-neon">
+                <div class="preset-card-icon">🌆</div>
+                <div class="preset-card-body">
+                  <h4>Cyberpunk Neon Drive</h4>
+                  <p>Vibrant Cyan-Magenta duotone + chromatic noise + subtle motion blur.</p>
+                </div>
+              </button>
+
+              <button type="button" class="preset-card" data-preset-action="tilt-miniature">
+                <div class="preset-card-icon">🏙️</div>
+                <div class="preset-card-body">
+                  <h4>Miniature Tilt-Shift</h4>
+                  <p>Shallow depth of field focus band + saturated micro-detail.</p>
+                </div>
+              </button>
+
+              <button type="button" class="preset-card" data-preset-action="dreamy-bokeh">
+                <div class="preset-card-icon">✨</div>
+                <div class="preset-card-body">
+                  <h4>Dreamy Frosted Aura</h4>
+                  <p>Sunset Gold soft map + Specular Bokeh bloom blur.</p>
+                </div>
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Pipeline Active Summary Footer -->
+        <div class="pipeline-status-bar">
+          <span class="pipeline-title">Active FX Pipeline:</span>
+          <div class="pipeline-tags" id="pipelineTags">
+            <span class="pipe-pill active" id="pipeUpscalePill">🚀 Upscale 4X</span>
+            <span class="pipe-pill" id="pipeGradientPill">🌈 Gradient</span>
+            <span class="pipe-pill" id="pipeNoisePill">🎞️ Grain</span>
+            <span class="pipe-pill" id="pipeBlurPill">💧 Blur</span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Center Canvas Stage & Comparison Viewer -->
+      <section class="viewport-stage" id="viewportStage">
+        <!-- Floating Canvas Toolbar -->
+        <div class="canvas-floating-bar">
+          <div class="res-info-tag" id="resInfoBadge">
+            <span class="res-pill original">Original: <strong id="origResLabel">1920 × 1080 (2.1 MP)</strong></span>
+            <span class="res-arrow">➔</span>
+            <span class="res-pill output">Output: <strong id="targetResLabel">7680 × 4320 (33.2 MP - 8K)</strong></span>
+          </div>
+
+          <div class="zoom-controls">
+            <button type="button" class="tool-btn" id="zoomOutBtn" title="Zoom Out (-)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                <line x1="8" y1="11" x2="14" y2="11"></line>
+              </svg>
+            </button>
+            <span class="zoom-level-text" id="zoomLevelDisplay">100%</span>
+            <button type="button" class="tool-btn" id="zoomInBtn" title="Zoom In (+)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                <line x1="11" y1="8" x2="11" y2="14"></line>
+                <line x1="8" y1="11" x2="14" y2="11"></line>
+              </svg>
+            </button>
+            <button type="button" class="tool-btn" id="zoomFitBtn" title="Fit to screen">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M15 3h6v6"></path>
+                <path d="M9 21H3v-6"></path>
+                <path d="M21 3l-7 7"></path>
+                <path d="M3 21l7-7"></path>
+              </svg>
+            </button>
+            <button type="button" class="tool-btn" id="zoomActualBtn" title="100% Pixel Ratio">1:1</button>
+          </div>
+        </div>
+
+        <!-- Canvas Container with Interactive Split Slider -->
+        <div class="canvas-scroll-area" id="canvasScrollArea">
+          <div class="canvas-viewport" id="canvasViewport">
+            <!-- Split View Mode Wrapper -->
+            <div class="split-comparison-container" id="splitComparisonContainer">
+              <!-- Background / Processed Canvas Layer -->
+              <canvas id="processedCanvas" class="main-canvas"></canvas>
+
+              <!-- Foreground / Original Canvas Layer (Clipped by Split Bar) -->
+              <div class="original-clip-wrapper" id="originalClipWrapper">
+                <canvas id="originalCanvas" class="main-canvas"></canvas>
+                <div class="split-floating-label left-label">BEFORE (Original)</div>
+              </div>
+
+              <!-- Interactive Split Divider Handle -->
+              <div class="split-divider-line" id="splitDividerLine">
+                <div class="split-handle">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                  </svg>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </div>
+              </div>
+
+              <div class="split-floating-label right-label">AFTER (AI FX)</div>
+            </div>
+
+            <!-- Side by Side Container (Hidden in Split mode) -->
+            <div class="side-by-side-container" id="sideBySideContainer" style="display: none;">
+              <div class="side-card">
+                <div class="side-badge">ORIGINAL</div>
+                <canvas id="sideOriginalCanvas" class="main-canvas"></canvas>
+              </div>
+              <div class="side-card">
+                <div class="side-badge highlight">PROCESSED (4K/8K FX)</div>
+                <canvas id="sideProcessedCanvas" class="main-canvas"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Drag & Drop Overlay -->
+        <div class="drop-zone-overlay" id="dropZoneOverlay">
+          <div class="drop-zone-content">
+            <div class="drop-icon">📂</div>
+            <h3>Drop Your Image Here</h3>
+            <p>Supports PNG, JPG, WEBP, AVIF up to 50MB</p>
+          </div>
+        </div>
+
+        <!-- Render Processing Toast Indicator -->
+        <div class="processing-toast" id="processingToast">
+          <div class="toast-spinner"></div>
+          <span id="processingStatusText">Enhancing details...</span>
+          <div class="toast-progress-track">
+            <div class="toast-progress-fill" id="toastProgressFill"></div>
+          </div>
+        </div>
+
+        <!-- Bottom Canvas Status Bar -->
+        <footer class="canvas-footer-bar">
+          <div class="footer-left">
+            <span class="status-indicator ready"><span class="status-dot"></span> Ready</span>
+            <span class="render-speed" id="renderSpeedLabel">⚡ Realtime Preview</span>
+          </div>
+
+          <div class="footer-center">
+            <span class="pan-hint">💡 Drag canvas to pan • Scroll to zoom • Drag neon line to compare</span>
+          </div>
+
+          <div class="footer-right">
+            <button type="button" class="btn-text-sm" id="btnCopyClipboard">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              <span>Copy to Clipboard</span>
+            </button>
+          </div>
+        </footer>
+      </section>
+    </main>
+
+    <!-- EXPORT MODAL DIALOG -->
+    <div class="modal-backdrop" id="exportModal" style="display: none;">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <div class="modal-title-wrap">
+            <div class="modal-icon">💾</div>
+            <div>
+              <h3>Export High-Definition Image</h3>
+              <p>Render and download full-resolution image with applied AI effects</p>
+            </div>
+          </div>
+          <button type="button" class="btn-close-modal" id="closeExportModalBtn">×</button>
+        </div>
+
+        <div class="modal-body">
+          <!-- Export Resolution Chooser -->
+          <div class="export-section">
+            <label class="modal-label">Output Resolution & Scale</label>
+            <div class="export-res-options" style="grid-template-columns: repeat(4, 1fr);">
+              <label class="res-radio-card">
+                <input type="radio" name="exportResolution" value="native" checked>
+                <div class="card-box">
+                  <span class="box-badge">Native</span>
+                  <strong id="exportNativeResText">1X Original</strong>
+                  <span class="box-sub">Fastest</span>
+                </div>
+              </label>
+
+              <label class="res-radio-card">
+                <input type="radio" name="exportResolution" value="2x">
+                <div class="card-box">
+                  <span class="box-badge">2X</span>
+                  <strong>2K QHD</strong>
+                  <span class="box-sub">2× Scale</span>
+                </div>
+              </label>
+
+              <label class="res-radio-card">
+                <input type="radio" name="exportResolution" value="4k">
+                <div class="card-box">
+                  <span class="box-badge highlight">4K UHD</span>
+                  <strong id="export4kResText">3840×2160</strong>
+                  <span class="box-sub">Ultra HD</span>
+                </div>
+              </label>
+
+              <label class="res-radio-card">
+                <input type="radio" name="exportResolution" value="8k">
+                <div class="card-box">
+                  <span class="box-badge gold">8K UHD</span>
+                  <strong id="export8kResText">7680×4320</strong>
+                  <span class="box-sub">Max Detail</span>
+                </div>
+              </label>
+            </div>
+
+            <!-- Custom Dimensions for Export -->
+            <div class="custom-dim-box" id="exportCustomDimBox" style="margin-top: 10px;">
+              <div class="dim-inputs-row">
+                <div class="dim-input-col">
+                  <span>Export Width (px)</span>
+                  <input type="number" id="exportCustomWidth" class="styled-num-input" value="3840" min="64" max="16384">
+                </div>
+                <button type="button" class="aspect-lock-btn locked" id="exportAspectLockBtn" title="Lock Aspect Ratio">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                  </svg>
+                </button>
+                <div class="dim-input-col">
+                  <span>Export Height (px)</span>
+                  <input type="number" id="exportCustomHeight" class="styled-num-input" value="2160" min="64" max="16384">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- File Format & Quality -->
+          <div class="export-section">
+            <div class="grid-2-col">
+              <div>
+                <label class="modal-label" for="exportFormatSelect">File Format</label>
+                <div class="select-styled">
+                  <select id="exportFormatSelect">
+                    <option value="png" selected>PNG (Lossless High-Res)</option>
+                    <option value="jpeg">JPEG (Compressed Photo)</option>
+                    <option value="webp">WebP (Modern Optimized)</option>
+                    <option value="tiff">TIFF (16-bit Master Print)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <div class="slider-header">
+                  <label class="modal-label" for="exportQualitySlider">Quality</label>
+                  <span class="slider-val" id="exportQualityVal">95%</span>
+                </div>
+                <input type="range" id="exportQualitySlider" min="10" max="100" value="95" class="styled-range">
+              </div>
+            </div>
+
+            <!-- Format-specific granular settings -->
+            <div id="exportPngOptions" style="margin-top: 8px;">
+              <div class="slider-header">
+                <label class="modal-label" for="exportPngCompression">PNG Compression Level</label>
+                <span class="slider-val" id="exportPngCompressionVal">Level 8</span>
+              </div>
+              <input type="range" id="exportPngCompression" min="0" max="9" value="8" class="styled-range">
+            </div>
+
+            <div id="exportJpegOptions" style="display: none; margin-top: 8px;">
+              <div class="toggle-row">
+                <label for="exportProgressiveJpg">Progressive JPEG Scanlines</label>
+                <input type="checkbox" id="exportProgressiveJpg" checked class="ios-checkbox">
+              </div>
+            </div>
+
+            <div id="exportWebpOptions" style="display: none; margin-top: 8px;">
+              <div class="toggle-row">
+                <label for="exportLosslessWebp">Lossless WebP Encoding</label>
+                <input type="checkbox" id="exportLosslessWebp" class="ios-checkbox">
+              </div>
+            </div>
+
+            <div id="exportTiffOptions" style="display: none; margin-top: 8px;">
+              <label class="modal-label" for="exportTiffCompression">TIFF Compression Method</label>
+              <div class="select-styled">
+                <select id="exportTiffCompression">
+                  <option value="deflate" selected>Deflate (Zip lossless)</option>
+                  <option value="lzw">LZW Compression</option>
+                  <option value="none">Uncompressed RAW</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- PPI / Print Density (72 to 300 PPI requirement) -->
+          <div class="export-section">
+            <div class="slider-header">
+              <label class="modal-label">Print Density (PPI / DPI)</label>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <input type="number" id="exportPpiInput" class="styled-num-input" style="width: 70px; padding: 2px 6px; text-align: center;" value="300" min="72" max="600">
+                <span style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);">PPI</span>
+              </div>
+            </div>
+            <div class="ppi-chips-row">
+              <button type="button" class="ppi-chip" data-export-ppi="72">72 (Web/Screen)</button>
+              <button type="button" class="ppi-chip" data-export-ppi="96">96 (Desktop)</button>
+              <button type="button" class="ppi-chip" data-export-ppi="150">150 (Newsprint)</button>
+              <button type="button" class="ppi-chip active" data-export-ppi="300">300 (Pro Print)</button>
+              <button type="button" class="ppi-chip" data-export-ppi="600">600 (Ultra Art)</button>
+            </div>
+            <input type="range" id="exportPpiSlider" min="72" max="600" value="300" class="styled-range" style="margin-top: 8px;">
+          </div>
+
+          <!-- Filename Customization -->
+          <div class="export-section">
+            <label class="modal-label" for="exportFilenameInput">Custom Export Filename</label>
+            <input type="text" id="exportFilenameInput" class="styled-num-input" style="width: 100%; text-align: left;" value="lumina-master-export" placeholder="my-custom-image">
+          </div>
+
+          <!-- Export Summary Estimate -->
+          <div class="export-summary-box">
+            <div class="summary-row">
+              <span>Target Dimensions:</span>
+              <strong id="summaryDimensionsText">3840 × 2160 px</strong>
+            </div>
+            <div class="summary-row">
+              <span>Pixel Density & Print:</span>
+              <strong id="summaryMegapixelsText">8.3 MP @ 300 PPI</strong>
+            </div>
+            <div class="summary-row">
+              <span>Applied Pipeline:</span>
+              <strong id="summaryPipelineText">Upscale 4K + Film Grain</strong>
+            </div>
+          </div>
+
+          <!-- Progress Bar during rendering -->
+          <div class="export-progress-wrap" id="exportProgressWrap" style="display: none;">
+            <div class="export-progress-label">
+              <span id="exportProgressStateText">Rendering pixels...</span>
+              <span id="exportProgressPercent">0%</span>
+            </div>
+            <div class="export-progress-bar">
+              <div class="export-progress-fill" id="exportProgressBarFill"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="cancelExportBtn">Cancel</button>
+          <button type="button" class="btn btn-primary" id="startExportDownloadBtn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <span id="downloadBtnText">Render & Download</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

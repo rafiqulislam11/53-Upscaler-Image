@@ -1,0 +1,25 @@
+{
+  "name": "image-processing-studio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Professional 4-in-1 Image Processing Studio (Upscale 4K/8K, Image to Gradient, Noise / Film Grain, Image to Blur)",
+  "scripts": {
+    "start": "node serve.js",
+    "install:all": "npm --prefix backend install && npm --prefix frontend install",
+    "build": "npm --prefix backend run build && npm --prefix frontend run build",
+    "start:backend": "npm --prefix backend start",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev"
+  },
+  "keywords": [
+    "image-processing",
+    "upscale-4k",
+    "upscale-8k",
+    "super-resolution",
+    "gradient-generator",
+    "film-grain",
+    "blur",
+    "ppi-300"
+  ],
+  "author": "Antigravity DeepMind Team"
+}
