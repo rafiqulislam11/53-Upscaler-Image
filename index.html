@@ -44,16 +44,24 @@
         </div>
 
         <div class="upload-wrapper">
-          <input type="file" id="imageFileInput" accept="image/*" class="sr-only">
-          <label for="imageFileInput" class="btn btn-upload" id="uploadLabel">
+          <input type="file" id="imageFileInput" accept="image/*" multiple class="sr-only">
+          <label for="imageFileInput" class="btn btn-upload" id="uploadLabel" title="Upload up to 100 images simultaneously">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
               <polyline points="17 8 12 3 7 8"></polyline>
               <line x1="12" y1="3" x2="12" y2="15"></line>
             </svg>
-            <span>Upload Image</span>
+            <span>Upload (1-100)</span>
           </label>
         </div>
+
+        <button type="button" class="btn btn-batch-toggle" id="btnBatchToggle" title="Open Batch Queue (Up to 100 Images)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+          </svg>
+          <span>Batch Queue</span>
+          <span class="batch-counter-badge" id="batchCounterBadge">1</span>
+        </button>
       </div>
 
       <!-- Top Actions (View mode & Export) -->
@@ -680,13 +688,38 @@
           <!-- PANE 4: IMAGE TO BLUR (CINEMATIC BLUR STUDIO) -->
           <div class="tab-pane" id="paneBlur">
             <div class="pane-header">
-              <div class="pane-badge">OPTICAL LENS FX</div>
+              <div class="pane-badge"><span class="pulse-dot"></span> OPTICAL LENS FX</div>
               <h3>Cinematic Blur Studio</h3>
-              <p>Apply Gaussian softness, directional motion blur, tilt-shift miniature depth-of-field, or specular bokeh.</p>
+              <p>Apply 100% workable Gaussian softness, directional motion blur, miniature tilt-shift, radial spin, or specular bokeh highlights.</p>
+            </div>
+
+            <!-- Quick Blur Presets Row -->
+            <div class="control-group">
+              <label class="group-label">Quick Blur Presets</label>
+              <div class="blur-preset-chips-row">
+                <button type="button" class="blur-preset-pill active" data-preset="portrait">
+                  <span>👤 Portrait Bokeh (20px)</span>
+                </button>
+                <button type="button" class="blur-preset-pill" data-preset="action">
+                  <span>⚡ Speed Streak (30px)</span>
+                </button>
+                <button type="button" class="blur-preset-pill" data-preset="tilt">
+                  <span>🏙️ Miniature Toy (25px)</span>
+                </button>
+                <button type="button" class="blur-preset-pill" data-preset="vortex">
+                  <span>🌀 Radial Whirl (18px)</span>
+                </button>
+                <button type="button" class="blur-preset-pill" data-preset="dreamy">
+                  <span>✨ Frosted Glow (35px)</span>
+                </button>
+                <button type="button" class="blur-preset-pill" data-preset="subtle">
+                  <span>🌿 Subtle Clean (6px)</span>
+                </button>
+              </div>
             </div>
 
             <div class="control-group">
-              <label class="group-label">Blur Mode</label>
+              <label class="group-label">Blur Mode & Optical Engine</label>
               <div class="blur-type-grid">
                 <button type="button" class="blur-chip active" data-blur="gaussian">
                   <span class="chip-title">Gaussian</span>
@@ -722,7 +755,7 @@
             <!-- Master Radius -->
             <div class="control-group">
               <div class="slider-header">
-                <label for="blurRadius">Blur Radius / Strength</label>
+                <label for="blurRadius">Master Blur Strength / Radius</label>
                 <span class="slider-val" id="blurRadiusVal">15 px</span>
               </div>
               <input type="range" id="blurRadius" min="0" max="120" value="15" class="styled-range">
@@ -731,13 +764,13 @@
             <!-- Contextual blur controls: Motion Blur -->
             <div class="control-group" id="motionAngleGroup" style="display: none;">
               <div class="slider-header">
-                <label for="motionAngle">Motion Angle</label>
+                <label for="motionAngle">Motion Direction Angle</label>
                 <span class="slider-val" id="motionAngleVal">45°</span>
               </div>
               <input type="range" id="motionAngle" min="0" max="360" value="45" class="styled-range">
 
-              <div class="slider-header" style="margin-top: 8px;">
-                <label for="motionDistance">Motion Distance (Streak)</label>
+              <div class="slider-header" style="margin-top: 10px;">
+                <label for="motionDistance">Streak Distance (Length)</label>
                 <span class="slider-val" id="motionDistanceVal">25 px</span>
               </div>
               <input type="range" id="motionDistance" min="1" max="100" value="25" class="styled-range">
@@ -746,7 +779,7 @@
             <!-- Contextual blur controls: Radial Spin & Zoom -->
             <div class="control-group" id="radialSpinGroup" style="display: none;">
               <div class="slider-header">
-                <label for="spinCenterX">Spin / Zoom Center (X / Y)</label>
+                <label for="spinCenterX">Optical Center X / Y (%)</label>
                 <span class="slider-val" id="spinCenterVal">50% / 50%</span>
               </div>
               <div class="dim-inputs-row">
@@ -754,8 +787,8 @@
                 <input type="range" id="spinCenterY" min="0" max="100" value="50" class="styled-range" title="Center Y">
               </div>
 
-              <div class="slider-header" style="margin-top: 8px;">
-                <label for="radialWhirl">Radial Whirl / Angle</label>
+              <div class="slider-header" style="margin-top: 10px;">
+                <label for="radialWhirl">Radial Whirl Angle</label>
                 <span class="slider-val" id="radialWhirlVal">25°</span>
               </div>
               <input type="range" id="radialWhirl" min="-180" max="180" value="25" class="styled-range">
@@ -764,28 +797,33 @@
             <!-- Contextual blur controls: Tilt-Shift -->
             <div class="control-group" id="tiltShiftGroup" style="display: none;">
               <div class="slider-header">
-                <label for="tiltFocusPos">Focus Position</label>
+                <label for="tiltFocusPos">Focus Position (Centerline)</label>
                 <span class="slider-val" id="tiltFocusPosVal">50%</span>
               </div>
               <input type="range" id="tiltFocusPos" min="0" max="100" value="50" class="styled-range">
 
-              <div class="slider-header" style="margin-top: 8px;">
-                <label for="tiltFocusWidth">Focus Clear Corridor</label>
+              <div class="slider-header" style="margin-top: 10px;">
+                <label for="tiltFocusWidth">Focus Clear Corridor (Sharp Band)</label>
                 <span class="slider-val" id="tiltFocusWidthVal">30%</span>
               </div>
               <input type="range" id="tiltFocusWidth" min="5" max="80" value="30" class="styled-range">
 
-              <div class="slider-header" style="margin-top: 8px;">
-                <label for="tiltAngle">Tilt-Shift Angle</label>
+              <div class="slider-header" style="margin-top: 10px;">
+                <label for="tiltAngle">Tilt-Shift Rotation Angle</label>
                 <span class="slider-val" id="tiltAngleVal">0°</span>
               </div>
               <input type="range" id="tiltAngle" min="0" max="180" value="0" class="styled-range">
 
-              <div class="slider-header" style="margin-top: 8px;">
+              <div class="slider-header" style="margin-top: 10px;">
                 <label for="tiltFeather">Feather Transition Softness</label>
                 <span class="slider-val" id="tiltFeatherVal">50%</span>
               </div>
               <input type="range" id="tiltFeather" min="0" max="100" value="50" class="styled-range">
+
+              <div class="toggle-row" style="margin-top: 10px;">
+                <label for="tiltGuideLines">Show Focus Guides on Canvas</label>
+                <input type="checkbox" id="tiltGuideLines" checked class="ios-checkbox">
+              </div>
             </div>
 
             <!-- Contextual blur controls: Bokeh Highlights -->
@@ -796,21 +834,21 @@
               </div>
               <input type="range" id="bokehThreshold" min="10" max="98" value="75" class="styled-range">
 
-              <div class="slider-header" style="margin-top: 8px;">
+              <div class="slider-header" style="margin-top: 10px;">
                 <label for="bokehBoost">Bokeh Glow Multiplier</label>
                 <span class="slider-val" id="bokehBoostVal">2.0x</span>
               </div>
               <input type="range" id="bokehBoost" min="1.0" max="5.0" step="0.1" value="2.0" class="styled-range">
 
-              <div class="slider-header" style="margin-top: 8px;">
+              <div class="slider-header" style="margin-top: 10px;">
                 <label for="bokehApertureSelect">Aperture Blade Shape</label>
               </div>
               <div class="select-styled">
                 <select id="bokehApertureSelect">
-                  <option value="circle" selected>Circular Aperture (Smooth)</option>
-                  <option value="5-blade">5-Blade Pentagon</option>
-                  <option value="6-blade">6-Blade Hexagonal</option>
-                  <option value="8-blade">8-Blade Octagonal Pro Lens</option>
+                  <option value="circle" selected>Circular Aperture (Smooth Cinema)</option>
+                  <option value="5-blade">5-Blade Pentagon (Vintage Glass)</option>
+                  <option value="6-blade">6-Blade Hexagonal (Classic Prime)</option>
+                  <option value="8-blade">8-Blade Octagonal (High-End Studio)</option>
                 </select>
               </div>
             </div>
@@ -819,27 +857,43 @@
             <div class="control-group" id="maskGroup" style="display: none;">
               <label class="group-label">Interactive Subject Mask</label>
               <div class="mask-tool-toolbar">
-                <button type="button" class="mask-btn active" id="btnMaskBrush">
-                  <span>🖌️ Brush</span>
+                <button type="button" class="mask-btn active" id="btnMaskBrush" title="Paint to keep subject sharp">
+                  <span>🖌️ Brush (Sharp)</span>
                 </button>
-                <button type="button" class="mask-btn" id="btnMaskEraser">
-                  <span>🧹 Eraser</span>
+                <button type="button" class="mask-btn" id="btnMaskEraser" title="Erase to blur area">
+                  <span>🧹 Eraser (Blur)</span>
                 </button>
-                <button type="button" class="btn btn-secondary btn-sm" id="btnMaskClear">
+                <button type="button" class="btn btn-secondary btn-sm" id="btnAutoSubject" title="Smart center subject focus">
+                  <span>🎯 Auto Subject</span>
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" id="btnMaskClear" title="Clear subject mask">
                   <span>Clear</span>
                 </button>
               </div>
 
-              <div class="slider-header" style="margin-top: 8px;">
-                <label for="maskBrushSize">Brush Size</label>
+              <div class="slider-header" style="margin-top: 10px;">
+                <label for="maskBrushSize">Brush Diameter</label>
                 <span class="slider-val" id="maskBrushSizeVal">35 px</span>
               </div>
-              <input type="range" id="maskBrushSize" min="5" max="100" value="35" class="styled-range">
+              <input type="range" id="maskBrushSize" min="5" max="150" value="35" class="styled-range">
+
+              <div class="toggle-row" style="margin-top: 10px;">
+                <label for="maskInvertToggle">Invert Mask (Blur Subject Instead)</label>
+                <input type="checkbox" id="maskInvertToggle" class="ios-checkbox">
+              </div>
             </div>
 
             <div class="toggle-row">
-              <label for="blurMaskEdges">Preserve Image Borders</label>
+              <label for="blurMaskEdges">Clamp Image Edges (Zero Dark Borders)</label>
               <input type="checkbox" id="blurMaskEdges" checked class="ios-checkbox">
+            </div>
+
+            <div class="info-card">
+              <div class="info-icon">💧</div>
+              <div class="info-body">
+                <strong>100% Workable GPU & Optical Engine</strong>
+                <p>Silky-smooth edge-clamped blur with sub-pixel sampling, depth-of-field corridor, and specular bokeh bloom.</p>
+              </div>
             </div>
           </div>
 
@@ -924,6 +978,20 @@
             <span class="res-pill original">Original: <strong id="origResLabel">1920 × 1080 (2.1 MP)</strong></span>
             <span class="res-arrow">➔</span>
             <span class="res-pill output">Output: <strong id="targetResLabel">7680 × 4320 (33.2 MP - 8K)</strong></span>
+          </div>
+
+          <div class="batch-nav-group" id="batchNavGroup" style="display: none;">
+            <button type="button" class="tool-btn" id="btnPrevImage" title="Previous Image in Batch (Left Arrow)">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </button>
+            <span class="batch-nav-counter" id="batchNavCounterText">1 / 1</span>
+            <button type="button" class="tool-btn" id="btnNextImage" title="Next Image in Batch (Right Arrow)">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
           </div>
 
           <div class="zoom-controls">
@@ -1013,6 +1081,61 @@
           <span id="processingStatusText">Enhancing details...</span>
           <div class="toast-progress-track">
             <div class="toast-progress-fill" id="toastProgressFill"></div>
+          </div>
+        </div>
+
+        <!-- BATCH IMAGE QUEUE DRAWER (Supports up to 100 images simultaneously) -->
+        <div class="batch-drawer collapsed" id="batchDrawer">
+          <div class="batch-drawer-header">
+            <div class="drawer-header-left">
+              <button type="button" class="drawer-toggle-btn" id="btnToggleBatchDrawer" title="Collapse or Expand Batch Queue">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="18 15 12 9 6 15"></polyline>
+                </svg>
+              </button>
+              <div class="drawer-header-meta">
+                <span class="drawer-title">BATCH IMAGES QUEUE</span>
+                <span class="drawer-badge" id="batchDrawerCountBadge">1 / 100 Images</span>
+              </div>
+            </div>
+
+            <div class="drawer-header-actions">
+              <input type="file" id="batchAddMoreInput" accept="image/*" multiple class="sr-only">
+              <label for="batchAddMoreInput" class="btn btn-sm btn-secondary" id="btnAddMoreBatchBtn" title="Add more images to batch (max 100)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                <span>Add (Max 100)</span>
+              </label>
+
+              <button type="button" class="btn btn-sm btn-secondary" id="btnApplyAllFX" title="Apply current FX adjustments to all images in batch">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
+                </svg>
+                <span>Apply to All</span>
+              </button>
+
+              <button type="button" class="btn btn-sm btn-primary-gradient" id="btnOpenBatchExportModal" title="Batch Process & Export all images as ZIP">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>Batch Export (ZIP)</span>
+              </button>
+
+              <button type="button" class="btn btn-sm btn-reset" id="btnClearBatchQueue" title="Clear all images from queue">
+                <span>Clear All</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Horizontal Scrollable Filmstrip of Micro Thumbnails -->
+          <div class="batch-filmstrip-wrapper" id="batchFilmstripWrapper">
+            <div class="batch-filmstrip" id="batchFilmstrip">
+              <!-- Dynamically rendered batch thumbnail cards -->
+            </div>
           </div>
         </div>
 
@@ -1242,8 +1365,93 @@
         </div>
       </div>
     </div>
+
+    <!-- BATCH EXPORT MODAL DIALOG (Up to 100 Images) -->
+    <div class="modal-backdrop" id="batchExportModal" style="display: none;">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <div class="modal-title-wrap">
+            <div class="modal-icon">📦</div>
+            <div>
+              <h3>Batch Process & Export (ZIP)</h3>
+              <p>Process up to 100 images with full Upscale & FX pipeline and download in 1 archive.</p>
+            </div>
+          </div>
+          <button type="button" class="btn-close-modal" id="closeBatchExportModalBtn">&times;</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="batch-stats-grid">
+            <div class="batch-stat-card">
+              <span class="batch-stat-val" id="batchModalTotalCount">1</span>
+              <span class="batch-stat-lbl">Queued Images</span>
+            </div>
+            <div class="batch-stat-card">
+              <span class="batch-stat-val" id="batchModalTargetScale">4X UHD</span>
+              <span class="batch-stat-lbl">Target Resolution</span>
+            </div>
+            <div class="batch-stat-card">
+              <span class="batch-stat-val">300 PPI</span>
+              <span class="batch-stat-lbl">Print Quality</span>
+            </div>
+          </div>
+
+          <div class="export-section">
+            <label class="modal-label" for="batchExportFormatSelect">Batch Export Image Format</label>
+            <div class="select-styled">
+              <select id="batchExportFormatSelect">
+                <option value="png" selected>PNG (Lossless 24-bit with Transparency)</option>
+                <option value="jpeg">JPEG (High-Speed Compressed)</option>
+                <option value="webp">WebP (Modern Compact High-Res)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="export-section">
+            <label class="modal-label" for="batchZipNameInput">ZIP Archive Filename</label>
+            <input type="text" id="batchZipNameInput" class="styled-num-input" style="width: 100%; text-align: left;" value="lumina-studio-batch-export" placeholder="batch-archive-name">
+          </div>
+
+          <div class="info-card" style="margin-top: 0;">
+            <div class="info-icon">⚡</div>
+            <div class="info-body">
+              <strong>High-Throughput Batch Processing</strong>
+              <p>Every image in the queue is rendered offscreen using the active Upscale, Blur, Gradient, and Grain parameters.</p>
+            </div>
+          </div>
+
+          <!-- Batch Progress Track -->
+          <div class="batch-progress-box" id="batchProgressBox" style="display: none;">
+            <div class="batch-progress-header">
+              <span id="batchProgressCurrentItem">Processing image 1 of 10...</span>
+              <span id="batchProgressPercent">0%</span>
+            </div>
+            <div class="batch-progress-bar">
+              <div class="batch-progress-fill" id="batchProgressBarFill"></div>
+            </div>
+            <div class="batch-progress-footer">
+              <span id="batchProgressSpeed">Speed: calculating...</span>
+              <span id="batchProgressEta">ETA: in progress</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="cancelBatchExportBtn">Cancel</button>
+          <button type="button" class="btn btn-primary" id="startBatchExportBtn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <span id="batchDownloadBtnText">Process & Download ZIP</span>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 
+  <script src="assets/jszip.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

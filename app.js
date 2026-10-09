@@ -16,6 +16,11 @@
     sourceHeight: 0,
     aspectRatio: 1,
 
+    // Batch Image Queue (Up to 100 Images Simultaneously)
+    batchQueue: [],
+    batchActiveIndex: 0,
+    isBatchDrawerOpen: false,
+
     // View Mode: 'split' | 'side' | 'processed'
     viewMode: 'split',
     splitRatio: 0.5, // 0.0 to 1.0
@@ -388,6 +393,44 @@
     DOM.exportProgressStateText = document.getElementById('exportProgressStateText');
     DOM.exportProgressPercent = document.getElementById('exportProgressPercent');
     DOM.exportProgressBarFill = document.getElementById('exportProgressBarFill');
+
+    // Batch Queue & Filmstrip Elements (Up to 100 images)
+    DOM.btnBatchToggle = document.getElementById('btnBatchToggle');
+    DOM.batchCounterBadge = document.getElementById('batchCounterBadge');
+    DOM.batchNavGroup = document.getElementById('batchNavGroup');
+    DOM.btnPrevImage = document.getElementById('btnPrevImage');
+    DOM.batchNavCounterText = document.getElementById('batchNavCounterText');
+    DOM.btnNextImage = document.getElementById('btnNextImage');
+    DOM.batchDrawer = document.getElementById('batchDrawer');
+    DOM.btnToggleBatchDrawer = document.getElementById('btnToggleBatchDrawer');
+    DOM.batchDrawerCountBadge = document.getElementById('batchDrawerCountBadge');
+    DOM.batchAddMoreInput = document.getElementById('batchAddMoreInput');
+    DOM.btnAddMoreBatchBtn = document.getElementById('btnAddMoreBatchBtn');
+    DOM.btnApplyAllFX = document.getElementById('btnApplyAllFX');
+    DOM.btnOpenBatchExportModal = document.getElementById('btnOpenBatchExportModal');
+    DOM.btnClearBatchQueue = document.getElementById('btnClearBatchQueue');
+    DOM.batchFilmstripWrapper = document.getElementById('batchFilmstripWrapper');
+    DOM.batchFilmstrip = document.getElementById('batchFilmstrip');
+
+    // Batch Export Modal Dialog Elements
+    DOM.batchExportModal = document.getElementById('batchExportModal');
+    DOM.closeBatchExportModalBtn = document.getElementById('closeBatchExportModalBtn');
+    DOM.batchModalTotalCount = document.getElementById('batchModalTotalCount');
+    DOM.batchModalTargetScale = document.getElementById('batchModalTargetScale');
+    DOM.batchExportFormatSelect = document.getElementById('batchExportFormatSelect');
+    DOM.batchZipNameInput = document.getElementById('batchZipNameInput');
+    DOM.batchProgressBox = document.getElementById('batchProgressBox');
+    DOM.batchProgressCurrentItem = document.getElementById('batchProgressCurrentItem');
+    DOM.batchProgressPercent = document.getElementById('batchProgressPercent');
+    DOM.batchProgressBarFill = document.getElementById('batchProgressBarFill');
+    DOM.batchProgressSpeed = document.getElementById('batchProgressSpeed');
+    DOM.batchProgressEta = document.getElementById('batchProgressEta');
+    DOM.cancelBatchExportBtn = document.getElementById('cancelBatchExportBtn');
+    DOM.startBatchExportBtn = document.getElementById('startBatchExportBtn');
+    DOM.batchDownloadBtnText = document.getElementById('batchDownloadBtnText');
+
+    // Quick Blur Presets
+    DOM.blurPresetPills = document.querySelectorAll('.blur-preset-pill');
   }
 
   // ==========================================================================
@@ -1214,6 +1257,615 @@
 
     // Window resize
     window.addEventListener('resize', debounce(fitCanvasToViewport, 150));
+
+    // Batch Drawer Toggles
+    if (DOM.btnBatchToggle) {
+      DOM.btnBatchToggle.addEventListener('click', toggleBatchDrawer);
+    }
+    if (DOM.btnToggleBatchDrawer) {
+      DOM.btnToggleBatchDrawer.addEventListener('click', toggleBatchDrawer);
+    }
+
+    // Batch Navigation (Canvas HUD Prev/Next)
+    if (DOM.btnPrevImage) {
+      DOM.btnPrevImage.addEventListener('click', () => navigateBatchImage(-1));
+    }
+    if (DOM.btnNextImage) {
+      DOM.btnNextImage.addEventListener('click', () => navigateBatchImage(1));
+    }
+
+    // Batch Drawer Actions
+    if (DOM.batchAddMoreInput) {
+      DOM.batchAddMoreInput.addEventListener('change', handleBatchAddMoreInput);
+    }
+    if (DOM.btnApplyAllFX) {
+      DOM.btnApplyAllFX.addEventListener('click', applyCurrentFXToAllBatch);
+    }
+    if (DOM.btnClearBatchQueue) {
+      DOM.btnClearBatchQueue.addEventListener('click', clearBatchQueue);
+    }
+
+    // Batch Export Modal Events
+    if (DOM.btnOpenBatchExportModal) {
+      DOM.btnOpenBatchExportModal.addEventListener('click', openBatchExportModal);
+    }
+    if (DOM.closeBatchExportModalBtn) {
+      DOM.closeBatchExportModalBtn.addEventListener('click', closeBatchExportModal);
+    }
+    if (DOM.cancelBatchExportBtn) {
+      DOM.cancelBatchExportBtn.addEventListener('click', closeBatchExportModal);
+    }
+    if (DOM.startBatchExportBtn) {
+      DOM.startBatchExportBtn.addEventListener('click', executeBatchExport);
+    }
+
+    // Quick Blur Presets
+    if (DOM.blurPresetPills) {
+      DOM.blurPresetPills.forEach(pill => {
+        pill.addEventListener('click', () => {
+          const preset = pill.getAttribute('data-preset');
+          applyBlurPreset(preset);
+        });
+      });
+    }
+
+    // Global Keyboard Shortcuts (Arrow Left/Right for batch, Escape for modals)
+    window.addEventListener('keydown', handleGlobalKeydown);
+  }
+
+  // ==========================================================================
+  // QUICK BLUR PRESETS (CINEMATIC BLUR STUDIO)
+  // ==========================================================================
+  const BLUR_PRESETS = {
+    portrait: { mode: 'bokeh', radius: 20, bokehThreshold: 70, bokehBoost: 2.2, label: 'Portrait Bokeh' },
+    action: { mode: 'motion', radius: 30, angle: 45, distance: 35, label: 'Speed Streak' },
+    tilt: { mode: 'tiltshift', radius: 25, tiltFocusPos: 50, tiltFocusWidth: 25, tiltFeather: 50, label: 'Miniature Toy' },
+    vortex: { mode: 'radial', radius: 18, spinCenterX: 50, spinCenterY: 50, radialWhirl: 35, label: 'Radial Whirl' },
+    dreamy: { mode: 'gaussian', radius: 35, label: 'Frosted Glow' },
+    subtle: { mode: 'gaussian', radius: 6, label: 'Subtle Clean' }
+  };
+
+  function applyBlurPreset(presetKey) {
+    const p = BLUR_PRESETS[presetKey];
+    if (!p) return;
+
+    if (DOM.blurPresetPills) {
+      DOM.blurPresetPills.forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-preset') === presetKey);
+      });
+    }
+
+    State.features.blur = true;
+    DOM.toggleBlur.checked = true;
+
+    State.blur.mode = p.mode;
+    State.blur.radius = p.radius;
+    if (p.angle !== undefined) State.blur.angle = p.angle;
+    if (p.distance !== undefined) State.blur.distance = p.distance;
+    if (p.tiltFocusPos !== undefined) State.blur.tiltFocusPos = p.tiltFocusPos;
+    if (p.tiltFocusWidth !== undefined) State.blur.tiltFocusWidth = p.tiltFocusWidth;
+    if (p.tiltFeather !== undefined) State.blur.tiltFeather = p.tiltFeather;
+    if (p.bokehThreshold !== undefined) State.blur.bokehThreshold = p.bokehThreshold;
+    if (p.bokehBoost !== undefined) State.blur.bokehBoost = p.bokehBoost;
+    if (p.radialWhirl !== undefined) State.blur.radialWhirl = p.radialWhirl;
+
+    DOM.blurChips.forEach(c => c.classList.toggle('active', c.getAttribute('data-blur') === State.blur.mode));
+    DOM.blurRadius.value = State.blur.radius;
+    DOM.blurRadiusVal.textContent = `${State.blur.radius} px`;
+    DOM.blurTag.textContent = `${State.blur.radius}px`;
+
+    if (DOM.motionAngle) {
+      DOM.motionAngle.value = State.blur.angle;
+      DOM.motionAngleVal.textContent = `${State.blur.angle}°`;
+    }
+    if (DOM.motionDistance) {
+      DOM.motionDistance.value = State.blur.distance;
+      DOM.motionDistanceVal.textContent = `${State.blur.distance} px`;
+    }
+    if (DOM.tiltFocusPos) {
+      DOM.tiltFocusPos.value = State.blur.tiltFocusPos;
+      DOM.tiltFocusPosVal.textContent = `${State.blur.tiltFocusPos}%`;
+    }
+    if (DOM.tiltFocusWidth) {
+      DOM.tiltFocusWidth.value = State.blur.tiltFocusWidth;
+      DOM.tiltFocusWidthVal.textContent = `${State.blur.tiltFocusWidth}%`;
+    }
+    if (DOM.bokehThreshold) {
+      DOM.bokehThreshold.value = State.blur.bokehThreshold;
+      DOM.bokehThresholdVal.textContent = `${State.blur.bokehThreshold}%`;
+    }
+    if (DOM.bokehBoost) {
+      DOM.bokehBoost.value = State.blur.bokehBoost;
+      DOM.bokehBoostVal.textContent = `${State.blur.bokehBoost}x`;
+    }
+
+    updateBlurSubcontrols();
+    updatePipelineTags();
+    requestRender();
+    showToast(`Applied blur preset: ${p.label}`, 2000);
+  }
+
+  // ==========================================================================
+  // BATCH IMAGE QUEUE & FILMSTRIP ENGINE (UP TO 100 IMAGES)
+  // ==========================================================================
+  function cloneCurrentSettings() {
+    return {
+      features: Object.assign({}, State.features),
+      upscale: Object.assign({}, State.upscale),
+      gradient: Object.assign({}, State.gradient, {
+        stops: State.gradient.stops.map(s => Object.assign({}, s))
+      }),
+      noise: Object.assign({}, State.noise),
+      blur: Object.assign({}, State.blur)
+    };
+  }
+
+  function applySettingsToStudio(settings) {
+    if (!settings) return;
+    if (settings.features) State.features = Object.assign({}, settings.features);
+    if (settings.upscale) State.upscale = Object.assign({}, settings.upscale);
+    if (settings.gradient) {
+      State.gradient = Object.assign({}, settings.gradient);
+      if (settings.gradient.stops) {
+        State.gradient.stops = settings.gradient.stops.map(s => Object.assign({}, s));
+      }
+    }
+    if (settings.noise) State.noise = Object.assign({}, settings.noise);
+    if (settings.blur) State.blur = Object.assign({}, settings.blur);
+    syncUIToState();
+  }
+
+  function saveActiveItemSettings() {
+    if (State.batchQueue[State.batchActiveIndex]) {
+      State.batchQueue[State.batchActiveIndex].settings = cloneCurrentSettings();
+    }
+  }
+
+  function toggleBatchDrawer() {
+    if (DOM.batchDrawer) {
+      DOM.batchDrawer.classList.toggle('collapsed');
+      State.isBatchDrawerOpen = !DOM.batchDrawer.classList.contains('collapsed');
+    }
+  }
+
+  function addFilesToBatch(fileList, replaceSample = false) {
+    const files = Array.from(fileList || []).filter(f => f.type.startsWith('image/'));
+    if (files.length === 0) {
+      showToast('Please select valid image files (PNG, JPG, WebP, AVIF).', 2500);
+      return;
+    }
+
+    const onlySample = State.batchQueue.length === 1 && State.batchQueue[0].isSample;
+    if (replaceSample && onlySample) {
+      State.batchQueue = [];
+      State.batchActiveIndex = 0;
+    }
+
+    const currentCount = State.batchQueue.length;
+    const maxAllowed = 100 - currentCount;
+    if (maxAllowed <= 0) {
+      showToast('Maximum queue limit reached (100 images). Remove images to add more.', 3000);
+      return;
+    }
+
+    const filesToLoad = files.slice(0, maxAllowed);
+    if (files.length > maxAllowed) {
+      showToast(`Adding ${maxAllowed} images (queue limit: 100).`, 3000);
+    } else {
+      showToast(`Loading ${filesToLoad.length} image${filesToLoad.length > 1 ? 's' : ''}...`);
+    }
+
+    [DOM.sampleCyberpunkBtn, DOM.samplePortraitBtn, DOM.sampleNatureBtn].forEach(b => {
+      if (b) b.classList.remove('active');
+    });
+
+    let loaded = 0;
+    const initialLen = State.batchQueue.length;
+
+    filesToLoad.forEach((file) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        const item = {
+          id: 'img_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+          name: file.name,
+          image: img,
+          src: url,
+          width: img.naturalWidth || img.width,
+          height: img.naturalHeight || img.height,
+          aspectRatio: (img.naturalWidth || img.width) / (img.naturalHeight || img.height),
+          isSample: false,
+          settings: cloneCurrentSettings()
+        };
+        State.batchQueue.push(item);
+        loaded++;
+
+        if (loaded === filesToLoad.length) {
+          if (initialLen === 0) {
+            setActiveBatchImage(0);
+          } else {
+            renderFilmstrip();
+            updateBatchUI();
+          }
+
+          if (State.batchQueue.length > 1 && DOM.batchDrawer && DOM.batchDrawer.classList.contains('collapsed')) {
+            DOM.batchDrawer.classList.remove('collapsed');
+          }
+
+          showToast(`Added ${loaded} image${loaded > 1 ? 's' : ''} to batch queue! (${State.batchQueue.length}/100)`, 2500);
+        }
+      };
+      img.onerror = () => {
+        loaded++;
+        console.warn('Could not load image file:', file.name);
+        if (loaded === filesToLoad.length) {
+          renderFilmstrip();
+          updateBatchUI();
+        }
+      };
+      img.src = url;
+    });
+  }
+
+  function handleBatchAddMoreInput(e) {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    addFilesToBatch(files, false);
+    e.target.value = '';
+  }
+
+  function setActiveBatchImage(index) {
+    if (index < 0 || index >= State.batchQueue.length) return;
+    saveActiveItemSettings();
+    State.batchActiveIndex = index;
+    const item = State.batchQueue[index];
+    State.sourceImage = item.image;
+    State.sourceWidth = item.width;
+    State.sourceHeight = item.height;
+    State.aspectRatio = item.aspectRatio;
+
+    if (item.settings) {
+      applySettingsToStudio(item.settings);
+    }
+
+    updateResolutionBadges();
+    updateBatchUI();
+    renderFilmstrip();
+    fitCanvasToViewport();
+    requestRender();
+  }
+
+  function navigateBatchImage(direction) {
+    if (State.batchQueue.length <= 1) return;
+    const nextIdx = (State.batchActiveIndex + direction + State.batchQueue.length) % State.batchQueue.length;
+    setActiveBatchImage(nextIdx);
+  }
+
+  function renderFilmstrip() {
+    if (!DOM.batchFilmstrip) return;
+    DOM.batchFilmstrip.innerHTML = '';
+
+    State.batchQueue.forEach((item, idx) => {
+      const card = document.createElement('div');
+      card.className = `batch-card ${idx === State.batchActiveIndex ? 'active' : ''}`;
+      card.setAttribute('data-index', idx);
+      card.title = `${item.name} (${item.width}×${item.height})`;
+
+      card.innerHTML = `
+        <span class="batch-card-index">#${idx + 1}</span>
+        <button type="button" class="batch-card-remove" title="Remove image">&times;</button>
+        <img src="${item.src}" class="batch-thumb-img" alt="${item.name}" loading="lazy" />
+        <div class="batch-card-info">
+          <span class="batch-card-name">${item.name}</span>
+          <div class="batch-card-meta">
+            <span>${item.width}×${item.height}</span>
+            <span>#${idx + 1}</span>
+          </div>
+        </div>
+      `;
+
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('.batch-card-remove')) return;
+        setActiveBatchImage(idx);
+      });
+
+      const removeBtn = card.querySelector('.batch-card-remove');
+      if (removeBtn) {
+        removeBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          removeBatchItem(idx);
+        });
+      }
+
+      DOM.batchFilmstrip.appendChild(card);
+    });
+
+    const activeCard = DOM.batchFilmstrip.querySelector('.batch-card.active');
+    if (activeCard && DOM.batchFilmstripWrapper) {
+      activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+  }
+
+  function removeBatchItem(idx) {
+    if (idx < 0 || idx >= State.batchQueue.length) return;
+    State.batchQueue.splice(idx, 1);
+    if (State.batchQueue.length === 0) {
+      loadDefaultSample('cyberpunk');
+      showToast('Queue is empty. Reset to default sample.', 2000);
+      return;
+    }
+
+    if (State.batchActiveIndex >= State.batchQueue.length) {
+      State.batchActiveIndex = State.batchQueue.length - 1;
+    } else if (State.batchActiveIndex > idx) {
+      State.batchActiveIndex--;
+    }
+
+    setActiveBatchImage(State.batchActiveIndex);
+    showToast('Removed image from batch queue', 1500);
+  }
+
+  function clearBatchQueue() {
+    if (State.batchQueue.length <= 1 && State.batchQueue[0] && State.batchQueue[0].isSample) {
+      showToast('Queue already clean.', 1500);
+      return;
+    }
+    State.batchQueue = [];
+    loadDefaultSample('cyberpunk');
+    showToast('Cleared all images from batch queue', 2000);
+  }
+
+  function updateBatchUI() {
+    const count = State.batchQueue.length;
+    const currentNum = count > 0 ? State.batchActiveIndex + 1 : 0;
+
+    if (DOM.batchCounterBadge) {
+      DOM.batchCounterBadge.textContent = count;
+    }
+
+    if (DOM.batchDrawerCountBadge) {
+      DOM.batchDrawerCountBadge.textContent = `${currentNum} / ${count} Images (Max 100)`;
+    }
+
+    if (DOM.batchNavCounterText) {
+      DOM.batchNavCounterText.textContent = `${currentNum} / ${count}`;
+    }
+
+    if (DOM.batchNavGroup) {
+      DOM.batchNavGroup.style.display = count > 1 ? 'flex' : 'none';
+    }
+
+    if (DOM.btnPrevImage) {
+      DOM.btnPrevImage.disabled = count <= 1;
+    }
+
+    if (DOM.btnNextImage) {
+      DOM.btnNextImage.disabled = count <= 1;
+    }
+  }
+
+  function applyCurrentFXToAllBatch() {
+    if (State.batchQueue.length === 0) return;
+    const currentSettings = cloneCurrentSettings();
+    State.batchQueue.forEach(item => {
+      item.settings = JSON.parse(JSON.stringify(currentSettings));
+    });
+    showToast(`Applied active FX parameters to all ${State.batchQueue.length} images!`, 2500);
+  }
+
+  // ==========================================================================
+  // BATCH PROCESS & EXPORT (ZIP ARCHIVE VIA JSZIP)
+  // ==========================================================================
+  function openBatchExportModal() {
+    if (State.batchQueue.length === 0) {
+      showToast('No images in batch queue to export.', 2000);
+      return;
+    }
+    saveActiveItemSettings();
+    if (DOM.batchModalTotalCount) {
+      DOM.batchModalTotalCount.textContent = State.batchQueue.length;
+    }
+    if (DOM.batchModalTargetScale) {
+      const scale = State.upscale.scaleTarget.toUpperCase();
+      DOM.batchModalTargetScale.textContent = scale.includes('K') ? `${scale} UHD` : `${scale}X UHD`;
+    }
+    if (DOM.batchProgressBox) {
+      DOM.batchProgressBox.style.display = 'none';
+    }
+    if (DOM.batchProgressBarFill) {
+      DOM.batchProgressBarFill.style.width = '0%';
+    }
+    if (DOM.batchProgressPercent) {
+      DOM.batchProgressPercent.textContent = '0%';
+    }
+    if (DOM.startBatchExportBtn) {
+      DOM.startBatchExportBtn.disabled = false;
+    }
+    if (DOM.cancelBatchExportBtn) {
+      DOM.cancelBatchExportBtn.disabled = false;
+    }
+    if (DOM.batchDownloadBtnText) {
+      DOM.batchDownloadBtnText.textContent = 'Process & Download ZIP';
+    }
+    if (DOM.batchExportModal) {
+      DOM.batchExportModal.style.display = 'flex';
+    }
+  }
+
+  function closeBatchExportModal() {
+    if (DOM.batchExportModal) {
+      DOM.batchExportModal.style.display = 'none';
+    }
+  }
+
+  async function executeBatchExport() {
+    const ZipClass = window.JSZip || (typeof JSZip !== 'undefined' ? JSZip : null);
+    if (!ZipClass) {
+      alert('JSZip library is not available. Please verify assets/jszip.min.js.');
+      return;
+    }
+
+    const total = State.batchQueue.length;
+    if (total === 0) return;
+
+    const format = DOM.batchExportFormatSelect ? DOM.batchExportFormatSelect.value : 'png';
+    const zipBaseName = (DOM.batchZipNameInput && DOM.batchZipNameInput.value.trim()) || 'lumina-studio-batch-export';
+    const mimeType = format === 'jpeg' ? 'image/jpeg' : format === 'webp' ? 'image/webp' : 'image/png';
+    const fileExt = format === 'jpeg' ? 'jpg' : format;
+
+    DOM.batchProgressBox.style.display = 'block';
+    DOM.startBatchExportBtn.disabled = true;
+    DOM.cancelBatchExportBtn.disabled = true;
+    DOM.batchDownloadBtnText.textContent = 'Processing Batch...';
+
+    const zip = new ZipClass();
+    const startTime = performance.now();
+
+    try {
+      for (let i = 0; i < total; i++) {
+        const item = State.batchQueue[i];
+        const settings = item.settings || cloneCurrentSettings();
+
+        const pct = Math.round((i / total) * 85);
+        DOM.batchProgressCurrentItem.textContent = `Processing image ${i + 1} of ${total}: ${item.name}...`;
+        DOM.batchProgressPercent.textContent = `${pct}%`;
+        DOM.batchProgressBarFill.style.width = `${pct}%`;
+
+        const elapsedSec = (performance.now() - startTime) / 1000;
+        if (i > 0 && elapsedSec > 0) {
+          const speed = (i / elapsedSec).toFixed(1);
+          const eta = Math.ceil((total - i) / (i / elapsedSec));
+          DOM.batchProgressSpeed.textContent = `Speed: ${speed} img/s`;
+          DOM.batchProgressEta.textContent = `ETA: ~${eta}s`;
+        } else {
+          DOM.batchProgressSpeed.textContent = `Speed: calculating...`;
+          DOM.batchProgressEta.textContent = `ETA: in progress`;
+        }
+
+        let targetDim;
+        if (settings.upscale.scaleTarget === 'native') {
+          targetDim = { width: item.width, height: item.height };
+        } else {
+          targetDim = calculateTargetDimensions(item.width, item.height, settings.upscale.scaleTarget);
+        }
+
+        const offCanvas = document.createElement('canvas');
+        offCanvas.width = targetDim.width;
+        offCanvas.height = targetDim.height;
+        const ctx = offCanvas.getContext('2d', { willReadFrequently: true });
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(item.image, 0, 0, targetDim.width, targetDim.height);
+
+        let imgData = ctx.getImageData(0, 0, targetDim.width, targetDim.height);
+
+        if (settings.features.upscale) {
+          applyUpscaleDetailEnhancement(imgData, targetDim.width, targetDim.height, settings.upscale);
+        }
+
+        if (settings.features.blur && settings.blur.radius > 0) {
+          const scaledBlur = Object.assign({}, settings.blur, {
+            radius: Math.round(settings.blur.radius * (targetDim.width / item.width))
+          });
+          applyBlurFilter(imgData, targetDim.width, targetDim.height, scaledBlur);
+        }
+
+        if (settings.features.gradient) {
+          applyGradientMap(imgData, targetDim.width, targetDim.height, settings.gradient);
+        }
+
+        if (settings.features.noise && settings.noise.amount > 0) {
+          applyFilmGrain(imgData, targetDim.width, targetDim.height, settings.noise);
+        }
+
+        ctx.putImageData(imgData, 0, 0);
+
+        const blob = await new Promise(resolve => offCanvas.toBlob(resolve, mimeType, 0.95));
+        if (blob) {
+          const cleanBase = item.name.replace(/\.[^/.]+$/, '');
+          const paddedIdx = String(i + 1).padStart(3, '0');
+          const outFilename = `${paddedIdx}_${cleanBase}_${targetDim.width}x${targetDim.height}.${fileExt}`;
+          zip.file(outFilename, blob);
+        }
+
+        await new Promise(r => setTimeout(r, 16));
+      }
+
+      DOM.batchProgressCurrentItem.textContent = 'Compressing and archiving ZIP...';
+      DOM.batchProgressPercent.textContent = '90%';
+      DOM.batchProgressBarFill.style.width = '90%';
+      DOM.batchProgressSpeed.textContent = 'Archiving...';
+      DOM.batchProgressEta.textContent = 'Almost done';
+
+      const zipBlob = await zip.generateAsync(
+        { type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } },
+        (meta) => {
+          const zipPct = Math.min(99, 90 + Math.round(meta.percent * 0.09));
+          DOM.batchProgressPercent.textContent = `${zipPct}%`;
+          DOM.batchProgressBarFill.style.width = `${zipPct}%`;
+        }
+      );
+
+      DOM.batchProgressCurrentItem.textContent = 'Archive ready!';
+      DOM.batchProgressPercent.textContent = '100%';
+      DOM.batchProgressBarFill.style.width = '100%';
+
+      const downloadUrl = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = `${zipBaseName}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(downloadUrl);
+
+      setTimeout(() => {
+        DOM.startBatchExportBtn.disabled = false;
+        DOM.cancelBatchExportBtn.disabled = false;
+        DOM.batchDownloadBtnText.textContent = 'Process & Download ZIP';
+        closeBatchExportModal();
+        showToast(`Batch export complete! ${total} images saved to ${zipBaseName}.zip`, 3500);
+      }, 700);
+
+    } catch (err) {
+      console.error('Batch export error:', err);
+      alert('Batch export error: ' + err.message);
+      DOM.startBatchExportBtn.disabled = false;
+      DOM.cancelBatchExportBtn.disabled = false;
+      DOM.batchDownloadBtnText.textContent = 'Process & Download ZIP';
+    }
+  }
+
+  function handleGlobalKeydown(e) {
+    const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
+    if (tag === 'input' || tag === 'textarea' || tag === 'select') {
+      if (e.key === 'Escape') {
+        e.target.blur();
+      }
+      return;
+    }
+
+    if (e.key === 'Escape') {
+      if (DOM.exportModal && DOM.exportModal.style.display !== 'none') {
+        closeExportModal();
+      }
+      if (DOM.batchExportModal && DOM.batchExportModal.style.display !== 'none') {
+        closeBatchExportModal();
+      }
+      return;
+    }
+
+    if (e.key === 'ArrowLeft') {
+      if (State.batchQueue.length > 1) {
+        e.preventDefault();
+        navigateBatchImage(-1);
+      }
+    } else if (e.key === 'ArrowRight') {
+      if (State.batchQueue.length > 1) {
+        e.preventDefault();
+        navigateBatchImage(1);
+      }
+    }
   }
 
   // ==========================================================================
@@ -1229,24 +1881,17 @@
     if (sampleName === 'nature' && DOM.sampleNatureBtn) DOM.sampleNatureBtn.classList.add('active');
 
     const imagePath = `assets/${sampleName}.jpg`;
-    loadImage(imagePath);
+    loadImage(imagePath, `${sampleName}.jpg`, true);
   }
 
   function handleFileInput(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      [DOM.sampleCyberpunkBtn, DOM.samplePortraitBtn, DOM.sampleNatureBtn].forEach(b => {
-        if (b) b.classList.remove('active');
-      });
-      loadImage(event.target.result);
-    };
-    reader.readAsDataURL(file);
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    addFilesToBatch(files, true);
+    e.target.value = '';
   }
 
-  function loadImage(src) {
+  function loadImage(src, name = 'sample.jpg', isSample = false) {
     showToast('Loading image into studio...');
     const img = new Image();
     if (src.startsWith('http://') || src.startsWith('https://')) {
@@ -1258,14 +1903,31 @@
       State.sourceHeight = img.naturalHeight || img.height;
       State.aspectRatio = State.sourceWidth / State.sourceHeight;
 
+      if (State.batchQueue.length === 0 || (State.batchQueue.length === 1 && State.batchQueue[0].isSample)) {
+        State.batchQueue = [{
+          id: 'item_' + Date.now(),
+          name: name,
+          image: img,
+          src: src,
+          width: State.sourceWidth,
+          height: State.sourceHeight,
+          aspectRatio: State.aspectRatio,
+          isSample: isSample,
+          settings: cloneCurrentSettings()
+        }];
+        State.batchActiveIndex = 0;
+      }
+
       updateResolutionBadges();
+      updateBatchUI();
+      renderFilmstrip();
       fitCanvasToViewport();
       requestRender();
       hideToast();
     };
     img.onerror = () => {
       console.warn('Could not load image directly from:', src);
-      generateProceduralFallbackSample(src);
+      generateProceduralFallbackSample(name || src);
     };
     img.src = src;
   }
@@ -1337,7 +1999,25 @@
       State.sourceWidth = 1280;
       State.sourceHeight = 720;
       State.aspectRatio = 1280 / 720;
+
+      if (State.batchQueue.length === 0 || (State.batchQueue.length === 1 && State.batchQueue[0].isSample)) {
+        State.batchQueue = [{
+          id: 'sample_fallback',
+          name: `${sampleName || 'sample'}.jpg`,
+          image: fallbackImg,
+          src: fallbackImg.src,
+          width: 1280,
+          height: 720,
+          aspectRatio: 1280 / 720,
+          isSample: true,
+          settings: cloneCurrentSettings()
+        }];
+        State.batchActiveIndex = 0;
+      }
+
       updateResolutionBadges();
+      updateBatchUI();
+      renderFilmstrip();
       fitCanvasToViewport();
       requestRender();
       hideToast();
@@ -1634,14 +2314,8 @@
     DOM.viewportStage.addEventListener('drop', (e) => {
       e.preventDefault();
       DOM.dropZoneOverlay.classList.remove('active');
-      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-        const file = e.dataTransfer.files[0];
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          [DOM.sampleCyberpunkBtn, DOM.samplePortraitBtn, DOM.sampleNatureBtn].forEach(b => b.classList.remove('active'));
-          loadImage(event.target.result);
-        };
-        reader.readAsDataURL(file);
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        addFilesToBatch(e.dataTransfer.files, State.batchQueue.length <= 1);
       }
     });
   }

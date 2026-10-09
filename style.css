@@ -30,7 +30,7 @@
   --font-main: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
-  --sidebar-width: 380px;
+  --sidebar-width: 400px;
   --topbar-height: 64px;
   --footer-height: 42px;
 
@@ -1959,6 +1959,408 @@ html, body {
   border-color: var(--accent-cyan);
   color: #fff;
   font-weight: 700;
+}
+
+/* ==========================================================================
+   BLUR PRESETS & EXTENDED OPTICAL CONTROLS
+   ========================================================================== */
+
+.blur-preset-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.blur-preset-pill {
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  padding: 5px 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: var(--transition-fast);
+  white-space: nowrap;
+}
+
+.blur-preset-pill:hover {
+  background: var(--bg-card);
+  color: #fff;
+  border-color: var(--border-medium);
+}
+
+.blur-preset-pill.active {
+  background: rgba(0, 242, 254, 0.12);
+  color: var(--accent-cyan);
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 10px var(--accent-cyan-glow);
+}
+
+/* ==========================================================================
+   BATCH IMAGE QUEUE & FILMSTRIP (UP TO 100 IMAGES)
+   ========================================================================== */
+
+.btn-batch-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(139, 92, 246, 0.14);
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.btn-batch-toggle:hover {
+  background: rgba(139, 92, 246, 0.25);
+  border-color: var(--accent-purple);
+  box-shadow: 0 0 15px var(--accent-purple-glow);
+}
+
+.batch-counter-badge {
+  background: var(--accent-cyan);
+  color: #050811;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 1px 7px;
+  border-radius: 10px;
+  min-width: 18px;
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* Floating Batch Prev/Next in Canvas HUD */
+.batch-nav-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(12, 17, 29, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-medium);
+  border-radius: 30px;
+  padding: 3px 8px;
+  pointer-events: auto;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+.batch-nav-counter {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--accent-cyan);
+  padding: 0 6px;
+  user-select: none;
+}
+
+/* Batch Bottom Drawer */
+.batch-drawer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: var(--footer-height);
+  background: rgba(10, 14, 24, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border-medium);
+  box-shadow: 0 -12px 35px rgba(0, 0, 0, 0.7);
+  z-index: 35;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+.batch-drawer.collapsed {
+  transform: translateY(calc(100% - 38px));
+}
+
+.batch-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 16px;
+  height: 38px;
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid var(--border-subtle);
+  user-select: none;
+}
+
+.drawer-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.drawer-toggle-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  transition: var(--transition-fast);
+}
+
+.drawer-toggle-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.batch-drawer.collapsed .drawer-toggle-btn svg {
+  transform: rotate(180deg);
+}
+
+.drawer-header-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.drawer-title {
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: #fff;
+}
+
+.drawer-badge {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--accent-cyan);
+  background: rgba(0, 242, 254, 0.1);
+  padding: 2px 7px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 242, 254, 0.25);
+}
+
+.drawer-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-primary-gradient {
+  background: linear-gradient(135deg, #7c3aed 0%, #06b6d4 100%);
+  color: #fff;
+  border: none;
+  box-shadow: 0 2px 10px rgba(124, 58, 237, 0.35);
+}
+
+.btn-primary-gradient:hover {
+  filter: brightness(1.12);
+  transform: translateY(-1px);
+}
+
+/* Filmstrip Cards Row */
+.batch-filmstrip-wrapper {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 10px 16px;
+  height: 110px;
+  scrollbar-width: thin;
+}
+
+.batch-filmstrip {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-width: min-content;
+}
+
+.batch-card {
+  position: relative;
+  width: 115px;
+  height: 88px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.batch-card:hover {
+  border-color: var(--border-medium);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 16px rgba(0, 0, 0, 0.4);
+}
+
+.batch-card.active {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 16px var(--accent-cyan-glow);
+}
+
+.batch-card.active::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple));
+}
+
+.batch-thumb-img {
+  width: 100%;
+  height: 54px;
+  object-fit: cover;
+  background: #000;
+}
+
+.batch-card-info {
+  padding: 3px 6px;
+  display: flex;
+  flex-direction: column;
+  background: rgba(12, 17, 29, 0.95);
+  flex: 1;
+  justify-content: center;
+}
+
+.batch-card-name {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.batch-card-meta {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  color: var(--text-muted);
+  display: flex;
+  justify-content: space-between;
+}
+
+.batch-card-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  border: none;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease;
+  z-index: 10;
+}
+
+.batch-card:hover .batch-card-remove {
+  opacity: 1;
+}
+
+.batch-card-remove:hover {
+  background: #ef4444;
+}
+
+.batch-card-index {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  font-weight: 800;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.7);
+  color: var(--accent-cyan);
+  z-index: 5;
+}
+
+/* Batch Export Modal Dialog Details */
+.batch-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.batch-stat-card {
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 12px 10px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+}
+
+.batch-stat-val {
+  font-family: var(--font-mono);
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--accent-cyan);
+}
+
+.batch-stat-lbl {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.batch-progress-box {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  border-radius: var(--radius-md);
+  padding: 14px;
+}
+
+.batch-progress-header, .batch-progress-footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.batch-progress-footer {
+  margin-top: 8px;
+  margin-bottom: 0;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.batch-progress-bar {
+  width: 100%;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 5px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+  margin: 6px 0;
+}
+
+.batch-progress-fill {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, #7c3aed, #06b6d4, #00f2fe);
+  border-radius: 5px;
+  transition: width 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 0 12px rgba(0, 242, 254, 0.5);
 }
 
 /* ==========================================================================

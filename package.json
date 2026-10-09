@@ -21,5 +21,8 @@
     "blur",
     "ppi-300"
   ],
-  "author": "Antigravity DeepMind Team"
+  "author": "Antigravity DeepMind Team",
+  "dependencies": {
+    "jszip": "^3.10.2"
+  }
 }
