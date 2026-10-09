@@ -429,6 +429,23 @@
     DOM.startBatchExportBtn = document.getElementById('startBatchExportBtn');
     DOM.batchDownloadBtnText = document.getElementById('batchDownloadBtnText');
 
+    // Advanced Batch HUD & Recommendations
+    DOM.exportBtnMainLabel = document.getElementById('exportBtnMainLabel');
+    DOM.batchExportBadge = document.getElementById('batchExportBadge');
+    DOM.batchHudBar = document.getElementById('batchHudBar');
+    DOM.batchHudCount = document.getElementById('batchHudCount');
+    DOM.btnHudProcessBatch = document.getElementById('btnHudProcessBatch');
+    DOM.btnHudBatchSettings = document.getElementById('btnHudBatchSettings');
+    DOM.hudProcessBtnText = document.getElementById('hudProcessBtnText');
+    DOM.batchExportRecommendBanner = document.getElementById('batchExportRecommendBanner');
+    DOM.recommendBatchCount = document.getElementById('recommendBatchCount');
+    DOM.btnSwitchToBatchModal = document.getElementById('btnSwitchToBatchModal');
+    DOM.btnSingleToBatchExport = document.getElementById('btnSingleToBatchExport');
+    DOM.batchScaleSelectorGrid = document.getElementById('batchScaleSelectorGrid');
+    DOM.batchSyncStudioFX = document.getElementById('batchSyncStudioFX');
+    DOM.batchItemsPreviewList = document.getElementById('batchItemsPreviewList');
+    DOM.batchModalListCount = document.getElementById('batchModalListCount');
+
     // Quick Blur Presets
     DOM.blurPresetPills = document.querySelectorAll('.blur-preset-pill');
   }
@@ -1156,8 +1173,14 @@
     // Copy to clipboard
     DOM.btnCopyClipboard.addEventListener('click', copyCanvasToClipboard);
 
-    // Export Modal Events
-    DOM.openExportModalBtn.addEventListener('click', openExportModal);
+    // Export Modal Events (Smart Batch Detection)
+    DOM.openExportModalBtn.addEventListener('click', () => {
+      if (State.batchQueue.length > 1) {
+        openBatchExportModal();
+      } else {
+        openExportModal();
+      }
+    });
     DOM.closeExportModalBtn.addEventListener('click', closeExportModal);
     DOM.cancelExportBtn.addEventListener('click', closeExportModal);
     DOM.startExportDownloadBtn.addEventListener('click', executeExportDownload);
@@ -1297,6 +1320,48 @@
     }
     if (DOM.startBatchExportBtn) {
       DOM.startBatchExportBtn.addEventListener('click', executeBatchExport);
+    }
+
+    // Batch HUD Bar Actions
+    if (DOM.btnHudProcessBatch) {
+      DOM.btnHudProcessBatch.addEventListener('click', () => {
+        openBatchExportModal();
+        executeBatchExport();
+      });
+    }
+    if (DOM.btnHudBatchSettings) {
+      DOM.btnHudBatchSettings.addEventListener('click', openBatchExportModal);
+    }
+
+    // Single modal to Batch modal switchers
+    if (DOM.btnSwitchToBatchModal) {
+      DOM.btnSwitchToBatchModal.addEventListener('click', () => {
+        closeExportModal();
+        openBatchExportModal();
+      });
+    }
+    if (DOM.btnSingleToBatchExport) {
+      DOM.btnSingleToBatchExport.addEventListener('click', () => {
+        closeExportModal();
+        openBatchExportModal();
+      });
+    }
+
+    // Batch Scale Selector Grid (In-Modal scale choices)
+    if (DOM.batchScaleSelectorGrid) {
+      DOM.batchScaleSelectorGrid.querySelectorAll('.scale-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const scale = btn.getAttribute('data-batch-scale');
+          State.upscale.scaleTarget = scale;
+          DOM.batchScaleSelectorGrid.querySelectorAll('.scale-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          if (DOM.batchModalTargetScale) {
+            const sc = scale.toUpperCase();
+            DOM.batchModalTargetScale.textContent = sc === 'NATIVE' ? '1X Native' : sc.includes('K') ? `${sc} UHD` : `${sc}X UHD`;
+          }
+          renderBatchModalPreviewList();
+        });
+      });
     }
 
     // Quick Blur Presets
@@ -1492,7 +1557,7 @@
             DOM.batchDrawer.classList.remove('collapsed');
           }
 
-          showToast(`Added ${loaded} image${loaded > 1 ? 's' : ''} to batch queue! (${State.batchQueue.length}/100)`, 2500);
+          showToast(`⚡ ${loaded} image${loaded > 1 ? 's' : ''} loaded! Batch ready for simultaneous 4K/8K ZIP export (${State.batchQueue.length}/100)`, 3000);
         }
       };
       img.onerror = () => {
@@ -1552,7 +1617,7 @@
       card.title = `${item.name} (${item.width}×${item.height})`;
 
       card.innerHTML = `
-        <span class="batch-card-index">#${idx + 1}</span>
+        <span class="batch-card-status" id="batchCardStatus_${idx}">#${idx + 1}</span>
         <button type="button" class="batch-card-remove" title="Remove image">&times;</button>
         <img src="${item.src}" class="batch-thumb-img" alt="${item.name}" loading="lazy" />
         <div class="batch-card-info">
@@ -1642,6 +1707,21 @@
     if (DOM.btnNextImage) {
       DOM.btnNextImage.disabled = count <= 1;
     }
+
+    // Top Header & Canvas HUD Dynamic Batch Mode Sync
+    if (count > 1) {
+      if (DOM.openExportModalBtn) DOM.openExportModalBtn.classList.add('btn-batch-active');
+      if (DOM.exportBtnMainLabel) DOM.exportBtnMainLabel.textContent = `Batch Export (${count})`;
+      if (DOM.batchExportBadge) DOM.batchExportBadge.style.display = 'inline-flex';
+      if (DOM.batchHudBar) DOM.batchHudBar.style.display = 'flex';
+      if (DOM.batchHudCount) DOM.batchHudCount.textContent = count;
+      if (DOM.hudProcessBtnText) DOM.hudProcessBtnText.textContent = `⚡ Process All (${count}) & Download ZIP`;
+    } else {
+      if (DOM.openExportModalBtn) DOM.openExportModalBtn.classList.remove('btn-batch-active');
+      if (DOM.exportBtnMainLabel) DOM.exportBtnMainLabel.textContent = 'Export 4K/8K';
+      if (DOM.batchExportBadge) DOM.batchExportBadge.style.display = 'none';
+      if (DOM.batchHudBar) DOM.batchHudBar.style.display = 'none';
+    }
   }
 
   function applyCurrentFXToAllBatch() {
@@ -1651,6 +1731,49 @@
       item.settings = JSON.parse(JSON.stringify(currentSettings));
     });
     showToast(`Applied active FX parameters to all ${State.batchQueue.length} images!`, 2500);
+  }
+
+  function updateItemBatchStatus(index, status) {
+    const cardStatus = document.getElementById(`batchCardStatus_${index}`);
+    if (cardStatus) {
+      cardStatus.className = `batch-card-status ${status}`;
+      cardStatus.textContent = status === 'processing' ? '⚡ Active' : status === 'done' ? '✓ Done' : `#${index + 1}`;
+    }
+    const previewStatus = document.getElementById(`previewStatus_${index}`);
+    if (previewStatus) {
+      previewStatus.className = `preview-row-status ${status}`;
+      previewStatus.textContent = status === 'processing' ? 'Processing...' : status === 'done' ? '✓ Done' : 'Queued';
+    }
+  }
+
+  function renderBatchModalPreviewList() {
+    if (!DOM.batchItemsPreviewList) return;
+    DOM.batchItemsPreviewList.innerHTML = '';
+    const targetScale = State.upscale.scaleTarget;
+    if (DOM.batchModalListCount) DOM.batchModalListCount.textContent = State.batchQueue.length;
+
+    State.batchQueue.forEach((item, idx) => {
+      let targetDim;
+      if (targetScale === 'native') {
+        targetDim = { width: item.width, height: item.height };
+      } else {
+        targetDim = calculateTargetDimensions(item.width, item.height, targetScale);
+      }
+
+      const row = document.createElement('div');
+      row.className = 'batch-item-preview-row';
+      row.innerHTML = `
+        <div class="preview-row-left">
+          <img src="${item.src}" class="preview-row-thumb" alt="${item.name}">
+          <div class="preview-row-info">
+            <span class="preview-row-name">${item.name}</span>
+            <span class="preview-row-dims">${item.width}×${item.height} ➔ ${targetDim.width}×${targetDim.height}</span>
+          </div>
+        </div>
+        <span class="preview-row-status" id="previewStatus_${idx}">Queued</span>
+      `;
+      DOM.batchItemsPreviewList.appendChild(row);
+    });
   }
 
   // ==========================================================================
@@ -1667,8 +1790,14 @@
     }
     if (DOM.batchModalTargetScale) {
       const scale = State.upscale.scaleTarget.toUpperCase();
-      DOM.batchModalTargetScale.textContent = scale.includes('K') ? `${scale} UHD` : `${scale}X UHD`;
+      DOM.batchModalTargetScale.textContent = scale === 'NATIVE' ? '1X Native' : scale.includes('K') ? `${scale} UHD` : `${scale}X UHD`;
     }
+    if (DOM.batchScaleSelectorGrid) {
+      DOM.batchScaleSelectorGrid.querySelectorAll('.scale-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-batch-scale') === State.upscale.scaleTarget);
+      });
+    }
+    renderBatchModalPreviewList();
     if (DOM.batchProgressBox) {
       DOM.batchProgressBox.style.display = 'none';
     }
@@ -1699,10 +1828,21 @@
   }
 
   async function executeBatchExport() {
-    const ZipClass = window.JSZip || (typeof JSZip !== 'undefined' ? JSZip : null);
+    let ZipClass = window.JSZip || (typeof JSZip !== 'undefined' ? JSZip : null);
     if (!ZipClass) {
-      alert('JSZip library is not available. Please verify assets/jszip.min.js.');
-      return;
+      try {
+        await new Promise((resolve, reject) => {
+          const s = document.createElement('script');
+          s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+          s.onload = () => resolve();
+          s.onerror = () => reject(new Error('Failed to load JSZip fallback'));
+          document.head.appendChild(s);
+        });
+        ZipClass = window.JSZip;
+      } catch (e) {
+        alert('Could not initialize ZIP engine. Please check assets/jszip.min.js.');
+        return;
+      }
     }
 
     const total = State.batchQueue.length;
@@ -1712,10 +1852,13 @@
     const zipBaseName = (DOM.batchZipNameInput && DOM.batchZipNameInput.value.trim()) || 'lumina-studio-batch-export';
     const mimeType = format === 'jpeg' ? 'image/jpeg' : format === 'webp' ? 'image/webp' : 'image/png';
     const fileExt = format === 'jpeg' ? 'jpg' : format;
+    const syncFX = DOM.batchSyncStudioFX ? DOM.batchSyncStudioFX.checked : true;
+    const currentStudioSettings = cloneCurrentSettings();
 
     DOM.batchProgressBox.style.display = 'block';
     DOM.startBatchExportBtn.disabled = true;
     DOM.cancelBatchExportBtn.disabled = true;
+    if (DOM.btnHudProcessBatch) DOM.btnHudProcessBatch.disabled = true;
     DOM.batchDownloadBtnText.textContent = 'Processing Batch...';
 
     const zip = new ZipClass();
@@ -1724,10 +1867,12 @@
     try {
       for (let i = 0; i < total; i++) {
         const item = State.batchQueue[i];
-        const settings = item.settings || cloneCurrentSettings();
+        const settings = syncFX ? JSON.parse(JSON.stringify(currentStudioSettings)) : (item.settings || cloneCurrentSettings());
+
+        updateItemBatchStatus(i, 'processing');
 
         const pct = Math.round((i / total) * 85);
-        DOM.batchProgressCurrentItem.textContent = `Processing image ${i + 1} of ${total}: ${item.name}...`;
+        DOM.batchProgressCurrentItem.textContent = `[${i + 1}/${total}] Processing "${item.name}"...`;
         DOM.batchProgressPercent.textContent = `${pct}%`;
         DOM.batchProgressBarFill.style.width = `${pct}%`;
 
@@ -1782,31 +1927,36 @@
 
         const blob = await new Promise(resolve => offCanvas.toBlob(resolve, mimeType, 0.95));
         if (blob) {
-          const cleanBase = item.name.replace(/\.[^/.]+$/, '');
+          const cleanBase = item.name.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
           const paddedIdx = String(i + 1).padStart(3, '0');
           const outFilename = `${paddedIdx}_${cleanBase}_${targetDim.width}x${targetDim.height}.${fileExt}`;
           zip.file(outFilename, blob);
         }
 
-        await new Promise(r => setTimeout(r, 16));
+        updateItemBatchStatus(i, 'done');
+
+        offCanvas.width = 1;
+        offCanvas.height = 1;
+
+        await new Promise(r => setTimeout(r, 20));
       }
 
-      DOM.batchProgressCurrentItem.textContent = 'Compressing and archiving ZIP...';
-      DOM.batchProgressPercent.textContent = '90%';
-      DOM.batchProgressBarFill.style.width = '90%';
-      DOM.batchProgressSpeed.textContent = 'Archiving...';
+      DOM.batchProgressCurrentItem.textContent = `Archiving ${total} images into ZIP...`;
+      DOM.batchProgressPercent.textContent = '88%';
+      DOM.batchProgressBarFill.style.width = '88%';
+      DOM.batchProgressSpeed.textContent = 'Compressing...';
       DOM.batchProgressEta.textContent = 'Almost done';
 
       const zipBlob = await zip.generateAsync(
         { type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } },
         (meta) => {
-          const zipPct = Math.min(99, 90 + Math.round(meta.percent * 0.09));
+          const zipPct = Math.min(99, 88 + Math.round(meta.percent * 0.11));
           DOM.batchProgressPercent.textContent = `${zipPct}%`;
           DOM.batchProgressBarFill.style.width = `${zipPct}%`;
         }
       );
 
-      DOM.batchProgressCurrentItem.textContent = 'Archive ready!';
+      DOM.batchProgressCurrentItem.textContent = `✓ Done! Downloaded ${zipBaseName}.zip`;
       DOM.batchProgressPercent.textContent = '100%';
       DOM.batchProgressBarFill.style.width = '100%';
 
@@ -1817,21 +1967,23 @@
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      URL.revokeObjectURL(downloadUrl);
+      setTimeout(() => URL.revokeObjectURL(downloadUrl), 8000);
 
       setTimeout(() => {
         DOM.startBatchExportBtn.disabled = false;
         DOM.cancelBatchExportBtn.disabled = false;
+        if (DOM.btnHudProcessBatch) DOM.btnHudProcessBatch.disabled = false;
         DOM.batchDownloadBtnText.textContent = 'Process & Download ZIP';
         closeBatchExportModal();
-        showToast(`Batch export complete! ${total} images saved to ${zipBaseName}.zip`, 3500);
-      }, 700);
+        showToast(`🎉 Batch export complete! All ${total} images downloaded in ${zipBaseName}.zip`, 4000);
+      }, 1000);
 
     } catch (err) {
       console.error('Batch export error:', err);
       alert('Batch export error: ' + err.message);
       DOM.startBatchExportBtn.disabled = false;
       DOM.cancelBatchExportBtn.disabled = false;
+      if (DOM.btnHudProcessBatch) DOM.btnHudProcessBatch.disabled = false;
       DOM.batchDownloadBtnText.textContent = 'Process & Download ZIP';
     }
   }
@@ -2069,6 +2221,10 @@
       } else {
         return { width: Math.round(4320 * aspect), height: 4320 };
       }
+    }
+    if (scaleType === 'custom') {
+      const mult = (State.upscale && State.upscale.customMultiplier) ? State.upscale.customMultiplier : 3;
+      return { width: Math.round(w * mult), height: Math.round(h * mult) };
     }
     return { width: w, height: h };
   }

@@ -103,7 +103,8 @@
             <polyline points="7 10 12 15 17 10"></polyline>
             <line x1="12" y1="15" x2="12" y2="3"></line>
           </svg>
-          <span>Export 4K/8K</span>
+          <span id="exportBtnMainLabel">Export 4K/8K</span>
+          <span class="batch-export-badge" id="batchExportBadge" style="display: none;">ZIP</span>
         </button>
       </div>
     </header>
@@ -972,6 +973,36 @@
 
       <!-- Center Canvas Stage & Comparison Viewer -->
       <section class="viewport-stage" id="viewportStage">
+        <!-- BATCH QUICK-ACTION FLOATING HUD BAR (Visible when >= 2 images uploaded) -->
+        <div class="batch-hud-bar" id="batchHudBar" style="display: none;">
+          <div class="batch-hud-left">
+            <div class="batch-hud-badge">
+              <span class="pulse-dot"></span>
+              <span id="batchHudCount">0</span> IMAGES
+            </div>
+            <div class="batch-hud-text">
+              <strong id="batchHudTitle">Batch Mode Ready</strong>
+              <span id="batchHudSubtitle">All uploaded images will be upscaled together & downloaded in 1 ZIP</span>
+            </div>
+          </div>
+          <div class="batch-hud-actions">
+            <button type="button" class="btn btn-sm btn-primary-gradient pulse-button" id="btnHudProcessBatch" title="Process all images simultaneously and download ZIP archive">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              <span id="hudProcessBtnText">⚡ Process All & Download ZIP</span>
+            </button>
+            <button type="button" class="btn btn-sm btn-secondary" id="btnHudBatchSettings" title="Configure Batch Options & Scales">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+              </svg>
+              <span>Batch Options</span>
+            </button>
+          </div>
+        </div>
         <!-- Floating Canvas Toolbar -->
         <div class="canvas-floating-bar">
           <div class="res-info-tag" id="resInfoBadge">
@@ -1069,9 +1100,9 @@
         <!-- Drag & Drop Overlay -->
         <div class="drop-zone-overlay" id="dropZoneOverlay">
           <div class="drop-zone-content">
-            <div class="drop-icon">📂</div>
-            <h3>Drop Your Image Here</h3>
-            <p>Supports PNG, JPG, WEBP, AVIF up to 50MB</p>
+            <div class="drop-icon">📦</div>
+            <h3>Drop Images for Batch Processing</h3>
+            <p>Upload 1 to 100 images • Process all together • Download as ZIP</p>
           </div>
         </div>
 
@@ -1178,6 +1209,18 @@
         </div>
 
         <div class="modal-body">
+          <!-- Batch Mode Recommendation Banner -->
+          <div class="batch-export-recommend-banner" id="batchExportRecommendBanner" style="display: none;">
+            <div class="recommend-icon">📦</div>
+            <div class="recommend-text">
+              <strong>Batch Mode: <span id="recommendBatchCount">0</span> images in queue!</strong>
+              <p>Process and export all images together into a single ZIP archive.</p>
+            </div>
+            <button type="button" class="btn btn-sm btn-primary-gradient" id="btnSwitchToBatchModal">
+              <span>Switch to Batch ZIP Export</span>
+            </button>
+          </div>
+
           <!-- Export Resolution Chooser -->
           <div class="export-section">
             <label class="modal-label">Output Resolution & Scale</label>
@@ -1354,6 +1397,9 @@
 
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" id="cancelExportBtn">Cancel</button>
+          <button type="button" class="btn btn-secondary" id="btnSingleToBatchExport" style="display: none;">
+            <span>📦 Export All as ZIP</span>
+          </button>
           <button type="button" class="btn btn-primary" id="startExportDownloadBtn">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -1396,20 +1442,74 @@
             </div>
           </div>
 
+          <!-- Target Scale for Batch -->
           <div class="export-section">
-            <label class="modal-label" for="batchExportFormatSelect">Batch Export Image Format</label>
-            <div class="select-styled">
-              <select id="batchExportFormatSelect">
-                <option value="png" selected>PNG (Lossless 24-bit with Transparency)</option>
-                <option value="jpeg">JPEG (High-Speed Compressed)</option>
-                <option value="webp">WebP (Modern Compact High-Res)</option>
-              </select>
+            <label class="modal-label">Batch Upscale Scale Target</label>
+            <div class="scale-selector-grid" id="batchScaleSelectorGrid">
+              <button type="button" class="scale-btn" data-batch-scale="2">
+                <span class="scale-ratio">2X</span>
+                <span class="scale-desc">2K QHD</span>
+              </button>
+              <button type="button" class="scale-btn active" data-batch-scale="4">
+                <span class="scale-ratio">4X</span>
+                <span class="scale-desc">Ultra HD</span>
+              </button>
+              <button type="button" class="scale-btn premium" data-batch-scale="4k">
+                <span class="badge-flag">UHD</span>
+                <span class="scale-ratio">4K</span>
+                <span class="scale-desc">3840×2160</span>
+              </button>
+              <button type="button" class="scale-btn premium gold" data-batch-scale="8k">
+                <span class="badge-flag">MAX</span>
+                <span class="scale-ratio">8K</span>
+                <span class="scale-desc">7680×4320</span>
+              </button>
+              <button type="button" class="scale-btn" data-batch-scale="native">
+                <span class="scale-ratio">1X</span>
+                <span class="scale-desc">Native</span>
+              </button>
             </div>
           </div>
 
+          <!-- Apply Active Studio FX Toggle -->
+          <div class="toggle-row" style="margin: 10px 0; padding: 10px 14px; background: rgba(255,255,255,0.03); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+            <div>
+              <label for="batchSyncStudioFX" style="cursor: pointer; font-weight: 600; color: #fff; font-size: 0.82rem;">
+                Apply active studio enhancements to ALL batch images
+              </label>
+              <p style="font-size: 0.72rem; color: var(--text-muted); margin: 2px 0 0 0;">
+                Upscale Sharpness, Denoise, Film Grain, Blur & Gradient will be applied uniformly.
+              </p>
+            </div>
+            <input type="checkbox" id="batchSyncStudioFX" checked class="ios-checkbox">
+          </div>
+
+          <!-- Queued Images Preview List -->
           <div class="export-section">
-            <label class="modal-label" for="batchZipNameInput">ZIP Archive Filename</label>
-            <input type="text" id="batchZipNameInput" class="styled-num-input" style="width: 100%; text-align: left;" value="lumina-studio-batch-export" placeholder="batch-archive-name">
+            <div class="slider-header">
+              <label class="modal-label">Queued Images for ZIP Archive (<span id="batchModalListCount">0</span>)</label>
+              <span style="font-size: 0.72rem; color: var(--text-muted);">All will be included in the ZIP</span>
+            </div>
+            <div class="batch-items-preview-list" id="batchItemsPreviewList"></div>
+          </div>
+
+          <div class="export-section">
+            <div class="grid-2-col">
+              <div>
+                <label class="modal-label" for="batchExportFormatSelect">Archive Image Format</label>
+                <div class="select-styled">
+                  <select id="batchExportFormatSelect">
+                    <option value="png" selected>PNG (Lossless 24-bit with Transparency)</option>
+                    <option value="jpeg">JPEG (High-Speed Compressed)</option>
+                    <option value="webp">WebP (Modern Compact High-Res)</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label class="modal-label" for="batchZipNameInput">ZIP Archive Filename</label>
+                <input type="text" id="batchZipNameInput" class="styled-num-input" style="width: 100%; text-align: left;" value="lumina-studio-batch-export" placeholder="batch-archive-name">
+              </div>
+            </div>
           </div>
 
           <div class="info-card" style="margin-top: 0;">
@@ -1452,6 +1552,13 @@
   </div>
 
   <script src="assets/jszip.min.js"></script>
+  <script>
+    if (typeof JSZip === 'undefined') {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+      document.head.appendChild(s);
+    }
+  </script>
   <script src="app.js"></script>
 </body>
 </html>
